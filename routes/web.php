@@ -24,6 +24,19 @@ Route::get('/', function() {
     return view('auth.landing');
 })->name('login.landing');
 
+// Tambahkan ini di bawah landing page
+Route::get('/login', function() {
+    return redirect()->route('user.login');
+})->name('login');
+
+// Route logout manual
+Route::post('/logout', function () {
+    Auth::logout();
+    request()->session()->invalidate();
+    request()->session()->regenerateToken();
+    return redirect('/');
+})->name('logout');
+
 /*
 |--------------------------------------------------------------------------
 | USER ROUTES

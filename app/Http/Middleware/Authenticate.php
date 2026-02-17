@@ -14,7 +14,7 @@ class Authenticate extends Middleware
     {
         if (!$request->expectsJson()) {
             // PERBAIKAN: Arahkan ke landing page (pilih role)
-            return route('login.landing');
+            return route('home');
         }
         
         return null;

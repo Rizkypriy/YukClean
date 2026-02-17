@@ -10,7 +10,7 @@
         <p class="text-gray-600 mt-2">Masuk ke dashboard administrator</p>
     </div>
 
-    <form method="POST" action="{{ route('login.admin.submit') }}" class="max-w-md mx-auto w-full">
+    <form method="POST" action="{{ route('admin.login.submit') }}" class="max-w-md mx-auto w-full">
         @csrf
         
         <div class="mb-4">
@@ -44,7 +44,7 @@
         </button>
 
         <p class="text-center mt-4">
-            <a href="{{ route('login.landing') }}" class="text-sm text-purple-600 hover:underline">
+            <a href="{{ route('home') }}" class="text-sm text-purple-600 hover:underline">
                 ← Kembali ke pilihan role
             </a>
         </p>

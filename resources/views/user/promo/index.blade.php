@@ -41,7 +41,11 @@
                     <span class="block text-2xl font-bold text-green-600">
                         {{ $promo->discount_type == 'percentage' ? $promo->discount_value.'%' : 'Rp '.number_format($promo->discount_value,0,',','.') }}
                     </span>
-                    <span class="text-xs text-gray-600">s.d {{ $promo->end_date->format('d M Y') }}</span>  {{-- Sesuai database --}}
+                    <span class="text-xs text-gray-600">s.d @if($promo->valid_until)
+            {{ \Carbon\Carbon::parse($promo->valid_until)->format('d M Y') }}
+        @else
+            Tanpa batas
+        @endif</span>  {{-- Sesuai database --}}
                 </div>
                 
                 {{-- Promo Details --}}

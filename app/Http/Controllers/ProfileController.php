@@ -71,7 +71,7 @@ class ProfileController extends Controller
         /** @var User $user */
         $user = Auth::user();
         
-        return view('profile.edit', compact('user'));
+        return view('user.profile.edit', compact('user'));
     }
 
     /**
@@ -120,7 +120,7 @@ class ProfileController extends Controller
 
         $user->update($data);
 
-        return redirect()->route('profile.index')
+        return redirect()->route('user.profile.index')
             ->with('success', 'Profil berhasil diperbarui!');
     }
 

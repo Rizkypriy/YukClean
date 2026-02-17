@@ -87,4 +87,11 @@ class Order extends Model
     {
         return 'Rp ' . number_format($this->total, 0, ',', '.');
     }
+
+
+    public function getStatusBadgeHtmlAttribute()
+{
+    $badge = $this->status_badge; // ambil array dari method existing
+    return '<span class="px-2 py-1 rounded-full text-xs ' . $badge[0] . ' ' . $badge[1] . '">' . $badge[2] . '</span>';
+}
 }

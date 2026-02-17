@@ -18,9 +18,9 @@ class PromoSeeder extends Seeder
                 'description' => 'Nikmati potongan harga untuk pemesanan pertama Anda',
                 'discount_type' => 'percentage',
                 'discount_value' => 20,
-                'min_purchase' => 50000,
-                'start_date' => Carbon::now(), // <-- GANTI valid_from → start_date
-                'end_date' => Carbon::now()->addMonths(3), // <-- GANTI valid_until → end_date
+                'min_transaction' => 50000,
+                'valid_from' => Carbon::now(), // <-- GANTI valid_from → start_date
+                'valid_until' => Carbon::now()->addMonths(3), // <-- GANTI valid_until → end_date
                 'is_active' => true,
             ],
             [
@@ -29,9 +29,9 @@ class PromoSeeder extends Seeder
                 'description' => 'Tanpa biaya tambahan untuk semua transaksi',
                 'discount_type' => 'fixed',
                 'discount_value' => 5000,
-                'min_purchase' => 0,
-                'start_date' => Carbon::now(),
-                'end_date' => Carbon::now()->addMonths(1),
+                'min_transaction' => 0,
+                'valid_from' => Carbon::now(),
+                'valid_until' => Carbon::now()->addMonths(1),
                 'is_active' => true,
             ],
             [
@@ -40,9 +40,9 @@ class PromoSeeder extends Seeder
                 'description' => 'Hemat hingga 30% untuk paket lengkap kebersihan rumah',
                 'discount_type' => 'percentage',
                 'discount_value' => 30,
-                'min_purchase' => 150000,
-                'start_date' => Carbon::now(),
-                'end_date' => Carbon::now()->addMonths(2),
+                'min_transaction' => 150000,
+                'valid_from' => Carbon::now(),
+                'valid_until' => Carbon::now()->addMonths(2),
                 'is_active' => true,
             ],
             [
@@ -51,9 +51,9 @@ class PromoSeeder extends Seeder
                 'description' => 'Potongan 10% untuk semua layanan kebersihan',
                 'discount_type' => 'percentage',
                 'discount_value' => 10,
-                'min_purchase' => 75000,
-                'start_date' => Carbon::now(),
-                'end_date' => Carbon::now()->addWeeks(2),
+                'min_transaction' => 75000,
+                'valid_from' => Carbon::now(),
+                'valid_until' => Carbon::now()->addWeeks(2),
                 'is_active' => true,
             ],
             [
@@ -62,9 +62,9 @@ class PromoSeeder extends Seeder
                 'description' => 'Nikmati diskon 25% khusus pemesanan di akhir pekan',
                 'discount_type' => 'percentage',
                 'discount_value' => 25,
-                'min_purchase' => 100000,
-                'start_date' => Carbon::now(),
-                'end_date' => Carbon::now()->endOfMonth(),
+                'min_transaction' => 100000,
+                'valid_from' => Carbon::now(),
+                'valid_until' => Carbon::now()->endOfMonth(),
                 'is_active' => true,
             ],
         ];

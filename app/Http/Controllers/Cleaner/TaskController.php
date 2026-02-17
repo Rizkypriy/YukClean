@@ -9,6 +9,7 @@ use App\Models\CleanerTask;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log; // TAMBAHKAN INI
 
 class TaskController extends Controller
 {
@@ -139,11 +140,13 @@ class TaskController extends Controller
         try {
             $data = ['status' => $request->status];
             
-            // Catat waktu berdasarkan status
-            if ($request->status === 'on_the_way') {
-                $data['started_at'] = now();
-            } elseif ($request->status === 'completed') {
-                $data['completed_at'] = now();
+           // Catat waktu berdasarkan status
+        if ($request->status === 'on_the_way') {
+            $data['started_at'] = now();
+        } elseif ($request->status === 'in_progress') {
+            $data['started_at'] = now(); // Jika sebelumnya belum dicatat
+        } elseif ($request->status === 'completed') {
+            $data['completed_at'] = now();
                 
                 // Update order status
                 if ($task->order) {
@@ -161,16 +164,18 @@ class TaskController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Status berhasil diperbarui'
+                'message' => 'Status berhasil diperbarui',
+                'status' => $task->status
             ]);
 
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal update status: ' . $e->getMessage()
-            ], 500);
-        }
+       } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Update status error: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal update status: ' . $e->getMessage()
+        ], 500);
+    }
     }
 
     /**

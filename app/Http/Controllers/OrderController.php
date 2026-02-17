@@ -280,17 +280,17 @@ class OrderController extends Controller
     /**
      * Track order progress.
      */
-    public function track(Order $order)
-    {
-        if ($order->user_id !== Auth::id()) {
-            abort(403);
-        }
-        
-        // Ambil data cleaner task jika ada
-        $cleanerTask = \App\Models\CleanerTask::where('order_id', $order->id)->first();
-        
-        return view('user.orders.track', compact('order', 'cleanerTask'));
+   public function track(Order $order)
+{
+    if ($order->user_id !== Auth::id()) {
+        abort(403);
     }
+    
+    // Ambil data cleaner task jika ada
+    $cleanerTask = CleanerTask::where('order_id', $order->id)->with('cleaner')->first();
+    
+    return view('user.orders.track', compact('order', 'cleanerTask'));
+}
 
     /**
      * Mark order as completed (after payment confirmation).

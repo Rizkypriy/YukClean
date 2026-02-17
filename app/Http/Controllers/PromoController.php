@@ -16,7 +16,7 @@ class PromoController extends Controller
     public function index()
     {
         $promos = Promo::active()
-            ->orderBy('end_date', 'asc')  // <-- Sesuai database
+            ->orderBy('valid_until', 'asc')  // <-- Sesuai database
             ->get();
 
         return view('user.promo.index', compact('promos'));

@@ -14,8 +14,8 @@ class Promo extends Model
         'discount_type',
         'discount_value',
         'min_purchase',      // <-- Sesuai database (bukan min_transaction)
-        'start_date',         // <-- Sesuai database (bukan valid_from)
-        'end_date',           // <-- Sesuai database (bukan valid_until)
+        'valid_from',         // <-- Sesuai database (bukan valid_from)
+        'valid_until',           // <-- Sesuai database (bukan valid_until)
         'background_color',
         'icon',
         'is_active',
@@ -35,8 +35,8 @@ class Promo extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true)
-            ->where('start_date', '<=', now())
-            ->where('end_date', '>=', now());
+            ->where('valid_from', '<=', now())
+            ->where('valid_until', '>=', now());
     }
 
     /**
