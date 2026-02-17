@@ -46,6 +46,11 @@ return [
             'driver' => 'session',
             'provider' => 'cleaners',
         ],
+
+        'admin' => [
+        'driver' => 'session',
+        'provider' => 'admins',
+        ],
     ],
 
     /*
@@ -75,6 +80,11 @@ return [
         'cleaners' => [
             'driver' => 'eloquent',
             'model' => App\Models\Cleaner::class,
+        ],
+
+        'admins' => [
+        'driver' => 'eloquent',
+        'model' => App\Models\Admin::class,
         ],
 
         // 'users' => [

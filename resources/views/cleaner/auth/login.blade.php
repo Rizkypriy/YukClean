@@ -43,10 +43,17 @@
             Login
         </button>
 
-        <p class="text-center mt-4 text-gray-600">
-            Belum punya akun? 
-            <a href="{{ route('cleaner.register') }}" class="text-green-600 font-medium hover:underline">Daftar</a>
-        </p>
+      <p class="text-center mt-4 text-gray-600">
+    Belum punya akun? 
+    <a href="{{ route('cleaner.register') }}" class="text-green-600 font-medium hover:underline">Daftar</a>
+</p>
+
+{{-- Link kembali ke landing page --}}
+<p class="text-center mt-2">
+    <a href="{{ route('login.landing') }}" class="text-sm text-gray-500 hover:underline">
+        ← Kembali ke pilihan role
+    </a>
+</p>
     </form>
 </div>
 @endsection

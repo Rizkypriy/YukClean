@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\DB;
 
 class TaskController extends Controller
 {
+    /**
+     * Display a listing of all tasks for the cleaner.
+     */
     public function index()
     {
         /** @var Cleaner $cleaner */
@@ -25,43 +28,81 @@ class TaskController extends Controller
         return view('cleaner.tasks.index', compact('tasks'));
     }
 
+    /**
+     * Display the specified task.
+     */
     public function show(CleanerTask $task)
     {
-        $this->authorize('view', $task);
+        // Pastikan task milik cleaner yang sedang login
+        if ($task->cleaner_id !== Auth::guard('cleaner')->id()) {
+            abort(403, 'Anda tidak memiliki akses ke tugas ini');
+        }
         
         return view('cleaner.tasks.show', compact('task'));
     }
 
-    public function accept(Request $request, $taskId)
+    /**
+     * Accept an available task.
+     */
+    public function accept(CleanerTask $task)
     {
         /** @var Cleaner $cleaner */
         $cleaner = Auth::guard('cleaner')->user();
-        
-        // In real app, you'd find the order and create cleaner_task
-        // This is simplified
-        
-        DB::transaction(function () use ($cleaner) {
-            $task = CleanerTask::create([
-                'cleaner_id' => $cleaner->id,
-                'order_id' => 1, // dummy
-                'customer_name' => 'Ibu Siti Aminah',
-                'address' => 'Jl. Merpati No. 45',
-                'service_type' => 'Pembersihan Rumah Regular',
-                'task_type' => 'regular',
-                'task_date' => now()->addDays(2),
-                'start_time' => '10:00',
-                'end_time' => '12:00',
-                'distance_km' => 0.8,
-                'status' => 'assigned',
-            ]);
-            
-            $cleaner->update(['status' => 'on_task']);
-        });
 
-        return redirect()->route('cleaner.tasks.current')
-            ->with('success', 'Tugas berhasil diambil');
+        // Validasi: task harus berstatus available
+        if ($task->status !== 'available') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tugas tidak tersedia untuk diambil'
+            ], 400);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Hitung jarak jika ada koordinat
+            $distance = null;
+            if ($cleaner->latitude && $cleaner->longitude && $task->latitude && $task->longitude) {
+                $distance = $this->calculateDistance(
+                    $cleaner->latitude, $cleaner->longitude,
+                    $task->latitude, $task->longitude
+                );
+            }
+
+            // Update task
+            $task->update([
+                'cleaner_id' => $cleaner->id,
+                'status' => 'assigned',
+                'distance_km' => $distance,
+            ]);
+
+            // Update cleaner status
+            $cleaner->update(['status' => 'on_task']);
+
+            // Update order jika ada relasi
+            if ($task->order) {
+                $task->order->update(['cleaner_id' => $cleaner->id]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tugas berhasil diambil',
+                'task' => $task
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil tugas: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
+    /**
+     * Display current active task.
+     */
     public function current()
     {
         /** @var Cleaner $cleaner */
@@ -77,52 +118,95 @@ class TaskController extends Controller
         return view('cleaner.tasks.current', compact('currentTask'));
     }
 
+    /**
+     * Update task status (on_the_way, in_progress, completed).
+     */
     public function updateStatus(Request $request, CleanerTask $task)
     {
-        $this->authorize('update', $task);
+        // Pastikan task milik cleaner yang sedang login
+        if ($task->cleaner_id !== Auth::guard('cleaner')->id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki akses ke tugas ini'
+            ], 403);
+        }
 
         $request->validate([
             'status' => 'required|in:on_the_way,in_progress,completed',
-            'notes' => 'nullable|string',
         ]);
 
-        DB::transaction(function () use ($request, $task) {
+        DB::beginTransaction();
+        try {
             $data = ['status' => $request->status];
             
+            // Catat waktu berdasarkan status
             if ($request->status === 'on_the_way') {
                 $data['started_at'] = now();
             } elseif ($request->status === 'completed') {
                 $data['completed_at'] = now();
                 
+                // Update order status
+                if ($task->order) {
+                    $task->order->update(['status' => 'completed']);
+                }
+                
                 // Update cleaner stats
                 $task->cleaner->increment('total_tasks');
-                $task->cleaner->updatePerformance();
+                $task->cleaner->update(['status' => 'available']);
             }
             
             $task->update($data);
-            
-            // Update cleaner status
-            if ($request->status === 'completed') {
-                $task->cleaner->update(['status' => 'available']);
-            }
-        });
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Status tugas berhasil diperbarui',
-        ]);
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status berhasil diperbarui'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal update status: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
+    /**
+     * Display task history (completed tasks).
+     */
     public function history()
     {
         /** @var Cleaner $cleaner */
         $cleaner = Auth::guard('cleaner')->user();
         
-        $completedTasks = CleanerTask::where('cleaner_id', $cleaner->id)
+        $tasks = CleanerTask::where('cleaner_id', $cleaner->id)
             ->where('status', 'completed')
             ->orderBy('completed_at', 'desc')
             ->paginate(15);
         
-        return view('cleaner.tasks.history', compact('completedTasks'));
+        return view('cleaner.tasks.history', compact('tasks'));
+    }
+
+    /**
+     * Calculate distance between two coordinates using Haversine formula.
+     */
+    private function calculateDistance($lat1, $lon1, $lat2, $lon2)
+    {
+        $earthRadius = 6371; // km
+        
+        $latFrom = deg2rad($lat1);
+        $lonFrom = deg2rad($lon1);
+        $latTo = deg2rad($lat2);
+        $lonTo = deg2rad($lon2);
+        
+        $latDelta = $latTo - $latFrom;
+        $lonDelta = $lonTo - $lonFrom;
+        
+        $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) +
+                cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
+        
+        return $angle * $earthRadius;
     }
 }

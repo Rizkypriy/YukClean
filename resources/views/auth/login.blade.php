@@ -1,6 +1,7 @@
+{{-- resources/views/auth/login.blade.php --}}
 @extends('layouts.app')
 
-@section('title', 'Login')
+@section('title', 'Login User')
 
 @section('content')
 <div class="min-h-screen bg-white flex flex-col justify-center p-6">
@@ -10,23 +11,8 @@
         <p class="text-gray-600 mt-2">Selamat datang kembali! Silakan masuk</p>
     </div>
 
-    {{-- HAPUS BAGIAN INI (baris 13-25) --}}
-    {{-- 
-    @if(session('success'))
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-4">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    @if(session('error'))
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4">
-            {{ session('error') }}
-        </div>
-    @endif
-    --}}
-
     {{-- Form Login --}}
-    <form method="POST" action="{{ route('login') }}">
+    <form method="POST" action="{{ url('/user/login') }}"> {{-- PERBAIKAN: dari 'login' ke 'user.login.submit' --}}
         @csrf
         
         {{-- Email --}}
@@ -66,7 +52,14 @@
         {{-- Link Register --}}
         <p class="text-center mt-4 text-gray-600">
             Belum punya akun? 
-            <a href="{{ route('register') }}" class="text-green-600 font-medium hover:underline">Daftar</a>
+            <a href="{{ route('user.register') }}" class="text-green-600 font-medium hover:underline">Daftar</a>  {{-- PERBAIKAN: dari 'register' ke 'user.register' --}}
+        </p>
+
+        {{-- Link kembali ke landing page --}}
+        <p class="text-center mt-2">
+            <a href="{{ route('login.landing') }}" class="text-sm text-gray-500 hover:underline">
+                ← Kembali ke pilihan role
+            </a>
         </p>
     </form>
 </div>

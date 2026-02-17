@@ -85,7 +85,8 @@
             return;
         }
         
-        fetch('{{ route("promo.check") }}', {
+        // PERBAIKAN: Ubah route dari 'promo.check' menjadi 'user.promo.check'
+        fetch('{{ route("user.promo.check") }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -128,5 +129,6 @@
         });
     }
 </script>
+
 @endpush
 @endsection

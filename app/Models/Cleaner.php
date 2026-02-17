@@ -7,8 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Carbon\Carbon;
-use App\Models\CleanerTask;
-use App\Models\CleanerPerformance;
+
 class Cleaner extends Authenticatable
 {
     use HasFactory, Notifiable;
@@ -54,15 +53,30 @@ class Cleaner extends Authenticatable
         return $this->hasMany(CleanerTask::class);
     }
 
+    public function currentTask()
+    {
+        return $this->hasOne(CleanerTask::class)
+            ->whereIn('status', ['assigned', 'on_the_way', 'in_progress']);
+    }
+
+    public function completedTasks()
+    {
+        return $this->hasMany(CleanerTask::class)->where('status', 'completed');
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    /**
+     * RELATIONSHIP PERFORMANCE - TAMBAHKAN INI
+     */
     public function performance()
     {
         return $this->hasMany(CleanerPerformance::class);
     }
 
-    public function currentTask()
-    {
-        return $this->hasOne(CleanerTask::class)->whereIn('status', ['assigned', 'on_the_way', 'in_progress']);
-    }
 
     /**
      * Accessors
@@ -84,19 +98,19 @@ class Cleaner extends Authenticatable
         return substr($initials, 0, 2);
     }
 
-    public function getFormattedRatingAttribute()
-    {
-        return number_format($this->rating, 1);
-    }
-
     public function getStatusBadgeAttribute()
     {
         return match($this->status) {
             'available' => ['bg-green-100', 'text-green-600', 'Available'],
-            'on_task' => ['bg-yellow-100', 'text-yellow-600', 'On Task'],
-            'offline' => ['bg-gray-100', 'text-gray-600', 'Offline'],
-            default => ['bg-gray-100', 'text-gray-600', $this->status],
+            'on_task'   => ['bg-yellow-100', 'text-yellow-600', 'On Task'],
+            'offline'   => ['bg-gray-100', 'text-gray-600', 'Offline'],
+            default     => ['bg-gray-100', 'text-gray-600', $this->status],
         };
+    }
+
+    public function getFormattedRatingAttribute()
+    {
+        return number_format($this->rating, 1);
     }
 
     /**
@@ -107,6 +121,28 @@ class Cleaner extends Authenticatable
         return $this->status === 'available';
     }
 
+    public function calculateDistance($latitude, $longitude)
+    {
+        // Haversine formula
+        $earthRadius = 6371; // km
+        
+        $latFrom = deg2rad($this->latitude);
+        $lonFrom = deg2rad($this->longitude);
+        $latTo = deg2rad($latitude);
+        $lonTo = deg2rad($longitude);
+        
+        $latDelta = $latTo - $latFrom;
+        $lonDelta = $lonTo - $lonFrom;
+        
+        $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) +
+                cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
+        
+        return $angle * $earthRadius;
+    }
+
+    /**
+     * Update performance data
+     */
     public function updatePerformance()
     {
         $now = Carbon::now();
@@ -133,15 +169,13 @@ class Cleaner extends Authenticatable
             ->where('status', 'completed')
             ->whereMonth('completed_at', $month)
             ->whereYear('completed_at', $year)
-            ->distinct('date')
-            ->count('date');
-
-        $avgRating = $this->rating;
+            ->distinct('task_date')
+            ->count('task_date');
 
         $performance->update([
             'tasks_completed' => $completedTasks,
             'active_days' => $activeDays,
-            'avg_rating' => $avgRating,
+            'avg_rating' => $this->rating,
             'satisfaction_rate' => $this->satisfaction_rate,
         ]);
     }

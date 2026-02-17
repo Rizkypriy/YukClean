@@ -18,8 +18,8 @@ class CleanerTask extends Model
         'address',
         'latitude',
         'longitude',
+        'service_name',
         'service_type',
-        'task_type',
         'task_date',
         'start_time',
         'end_time',
@@ -29,6 +29,7 @@ class CleanerTask extends Model
         'completed_at',
         'notes',
     ];
+
 
     protected $casts = [
         'task_date' => 'date',
@@ -57,6 +58,19 @@ class CleanerTask extends Model
     /**
      * Accessors
      */
+    public function getStatusBadgeAttribute()
+    {
+        return match($this->status) {
+            'available'    => ['bg-blue-100', 'text-blue-600', 'Tersedia'],
+            'assigned'     => ['bg-purple-100', 'text-purple-600', 'Ditugaskan'],
+            'on_the_way'   => ['bg-yellow-100', 'text-yellow-600', 'Menuju Lokasi'],
+            'in_progress'  => ['bg-green-100', 'text-green-600', 'Sedang Bekerja'],
+            'completed'    => ['bg-gray-100', 'text-gray-600', 'Selesai'],
+            'cancelled'    => ['bg-red-100', 'text-red-600', 'Dibatalkan'],
+            default        => ['bg-gray-100', 'text-gray-600', $this->status],
+        };
+    }
+
     public function getFormattedDistanceAttribute()
     {
         return number_format($this->distance_km, 1) . ' km';
@@ -69,29 +83,18 @@ class CleanerTask extends Model
 
     public function getFormattedTimeAttribute()
     {
-        return $this->start_time->format('H:i') . ' - ' . $this->end_time->format('H:i');
+        return substr($this->start_time, 0, 5) . ' - ' . substr($this->end_time, 0, 5);
     }
 
-    public function getStatusBadgeAttribute()
+    public function getServiceIconAttribute()
     {
-        return match($this->status) {
-            'assigned' => ['bg-blue-100', 'text-blue-600', 'Ditugaskan'],
-            'on_the_way' => ['bg-yellow-100', 'text-yellow-600', 'Menuju Lokasi'],
-            'in_progress' => ['bg-green-100', 'text-green-600', 'Sedang Bekerja'],
-            'completed' => ['bg-gray-100', 'text-gray-600', 'Selesai'],
-            'cancelled' => ['bg-red-100', 'text-red-600', 'Dibatalkan'],
-            default => ['bg-gray-100', 'text-gray-600', $this->status],
-        };
-    }
-
-    public function getTaskTypeIconAttribute()
-    {
-        return match($this->task_type) {
-            'regular' => '🏠',
+        return match($this->service_type) {
+            'regular'       => '🏠',
             'deep_cleaning' => '🧹',
-            'bathroom' => '🚽',
-            'window' => '🪟',
-            default => '📋',
+            'bathroom'      => '🚽',
+            'window'        => '🪟',
+            'kitchen'       => '🍳',
+            default         => '📋',
         };
     }
 }

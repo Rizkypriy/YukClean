@@ -52,7 +52,7 @@ class ProfileController extends Controller
         // Get unread notifications count
         $notificationCount = 3; // This could be dynamic if you implement notifications
         
-        return view('profile.index', compact(
+        return view('user.profile.index', compact(
             'user', 
             'orderCount', 
             'activeOrdersCount', 

@@ -9,19 +9,37 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        .nav-active { @apply text-green-600 relative; }
+        * {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .nav-active {
+            @apply text-green-600 relative;
+        }
         .nav-active:after {
             content: '';
             @apply absolute -bottom-3 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-green-600 rounded-full;
         }
         @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
-        .alert { animation: slideIn 0.3s ease-out; }
+        .alert {
+            animation: slideIn 0.3s ease-out;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -36,13 +54,16 @@
                     <span>{{ session('success') }}</span>
                 </div>
                 <button onclick="this.closest('#successAlert').remove()" class="ml-4 text-green-700 hover:text-green-900">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
         </div>
-        <script>setTimeout(() => document.getElementById('successAlert')?.remove(), 5000);</script>
+        <script>
+            setTimeout(function() {
+                const alert = document.getElementById('successAlert');
+                if (alert) alert.remove();
+            }, 5000);
+        </script>
     @endif
 
     {{-- Notifikasi Error --}}
@@ -56,35 +77,50 @@
                     <span>{{ session('error') }}</span>
                 </div>
                 <button onclick="this.closest('#errorAlert').remove()" class="ml-4 text-red-700 hover:text-red-900">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
         </div>
-        <script>setTimeout(() => document.getElementById('errorAlert')?.remove(), 5000);</script>
+        <script>
+            setTimeout(function() {
+                const alert = document.getElementById('errorAlert');
+                if (alert) alert.remove();
+            }, 5000);
+        </script>
     @endif
 
+    {{-- Main Content --}}
     @yield('content')
 
-    @if(!request()->is('cleaner/login') && !request()->is('cleaner/register'))
-    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 px-4 z-50">
-        <div class="flex justify-around items-center">
-            <a href="{{ route('cleaner.dashboard') }}" class="flex flex-col items-center {{ request()->routeIs('cleaner.dashboard') ? 'nav-active text-green-600' : 'text-gray-500' }}">
-                <i class="fas fa-home text-xl"></i>
-                <span class="text-xs mt-1">Tugas</span>
-            </a>
-            <a href="{{ route('cleaner.tasks.current') }}" class="flex flex-col items-center {{ request()->routeIs('cleaner.tasks.current') ? 'nav-active text-green-600' : 'text-gray-500' }}">
-                <i class="fas fa-broom text-xl"></i>
-                <span class="text-xs mt-1">Status</span>
-            </a>
-            <a href="{{ route('cleaner.profile') }}" class="flex flex-col items-center {{ request()->routeIs('cleaner.profile') ? 'nav-active text-green-600' : 'text-gray-500' }}">
-                <i class="fas fa-user text-xl"></i>
-                <span class="text-xs mt-1">Profil</span>
-            </a>
-        </div>
-    </nav>
-    @endif
+    {{-- Bottom Navigation - Cleaner (3 Menu) --}}
+    @auth('cleaner')
+        @if(!request()->is('cleaner/login') && !request()->is('cleaner/register'))
+        <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 px-4 z-50">
+            <div class="flex justify-around items-center">
+                {{-- Tugas / Dashboard --}}
+                <a href="{{ route('cleaner.dashboard') }}" 
+                   class="flex flex-col items-center {{ request()->routeIs('cleaner.dashboard') ? 'nav-active text-green-600' : 'text-gray-500' }}">
+                    <i class="fas fa-home text-xl"></i>
+                    <span class="text-xs mt-1">Tugas</span>
+                </a>
+                
+                {{-- Status Kerja --}}
+                <a href="{{ route('cleaner.tasks.current') }}" 
+                   class="flex flex-col items-center {{ request()->routeIs('cleaner.tasks.current') ? 'nav-active text-green-600' : 'text-gray-500' }}">
+                    <i class="fas fa-broom text-xl"></i>
+                    <span class="text-xs mt-1">Status Kerja</span>
+                </a>
+                
+                {{-- Profil --}}
+                <a href="{{ route('cleaner.profile.index') }}" 
+                   class="flex flex-col items-center {{ request()->routeIs('cleaner.profile.*') ? 'nav-active text-green-600' : 'text-gray-500' }}">
+                    <i class="fas fa-user text-xl"></i>
+                    <span class="text-xs mt-1">Profil</span>
+                </a>
+            </div>
+        </nav>
+        @endif
+    @endauth
 
     @stack('scripts')
 </body>

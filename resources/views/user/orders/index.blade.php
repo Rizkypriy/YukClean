@@ -112,8 +112,8 @@
                             </a>
 
                             {{-- Tombol Lacak --}}
-                            <a href="{{ route('orders.track', $order) }}" 
-                               class="flex items-center gap-1 border border-green-600 text-green-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-50 transition">
+                            <a href="{{ route('user.orders.track', $order) }}" 
+                            class="flex items-center gap-1 border border-green-600 text-green-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-50 transition">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                                 </svg>
@@ -136,7 +136,8 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
                     <p class="text-gray-500">Belum ada pesanan aktif</p>
-                    <a href="{{ route('home') }}" class="inline-block mt-4 text-green-600 font-medium">Mulai pesan sekarang</a>
+                    {{-- PERBAIKAN: Ganti route('home') dengan route('user.dashboard') --}}
+                    <a href="{{ route('user.dashboard') }}" class="inline-block mt-4 text-green-600 font-medium">Mulai pesan sekarang</a>
                 </div>
                 @endforelse
             </div>
@@ -205,12 +206,13 @@
                         
                         <div class="flex gap-2">
                             @if($order->status === 'completed')
-                                <a href="{{ route('orders.completed', $order) }}" 
+                                {{-- PERBAIKAN: Tambahkan prefix user. --}}
+                                <a href="{{ route('user.orders.completed', $order) }}" 
                                    class="border border-green-600 text-green-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-50 transition">
                                     Lihat Ucapan Terima Kasih
                                 </a>
                             @else
-                                <a href="{{ route('orders.show', $order) }}" 
+                                <a href="{{ route('user.orders.show', $order) }}" 
                                    class="border border-green-600 text-green-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-50 transition">
                                     Detail
                                 </a>
@@ -260,26 +262,59 @@
 </div>
 
 {{-- Script untuk Alpine.js --}}
-<script src="//unpkg.com/alpinejs" defer></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
 @push('scripts')
 <script>
+    // Fungsi untuk menampilkan modal cancel
     function showCancelModal(orderId) {
         const form = document.getElementById('cancelForm');
-        form.action = `/orders/${orderId}/cancel`;
-        document.getElementById('cancelModal').classList.remove('hidden');
-    }
-    
-    function hideCancelModal() {
-        document.getElementById('cancelModal').classList.add('hidden');
-    }
-    
-    // Close modal when clicking outside
-    window.addEventListener('click', function(event) {
         const modal = document.getElementById('cancelModal');
-        if (event.target === modal) {
+        
+        if (form && modal) {
+            // Set action form dengan prefix user/
+            form.action = `/user/orders/${orderId}/cancel`;
+            
+            // Tampilkan modal
+            modal.classList.remove('hidden');
+            
+            // Optional: Log untuk debugging
+            console.log('Cancel modal shown for order:', orderId);
+        } else {
+            console.error('Form or modal not found');
+        }
+    }
+    
+    // Fungsi untuk menyembunyikan modal cancel
+    function hideCancelModal() {
+        const modal = document.getElementById('cancelModal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    }
+    
+    // Fungsi untuk handle klik di luar modal
+    function handleClickOutside(event) {
+        const modal = document.getElementById('cancelModal');
+        if (modal && event.target === modal) {
             hideCancelModal();
         }
+    }
+    
+    // Pastikan DOM sudah siap sebelum menambahkan event listener
+    document.addEventListener('DOMContentLoaded', function() {
+        // Hapus event listener lama jika ada (untuk menghindari duplikasi)
+        window.removeEventListener('click', handleClickOutside);
+        
+        // Tambahkan event listener baru
+        window.addEventListener('click', handleClickOutside);
+        
+        console.log('Cancel modal script initialized');
+    });
+    
+    // Cleanup event listener saat halaman di-unload (opsional)
+    window.addEventListener('beforeunload', function() {
+        window.removeEventListener('click', handleClickOutside);
     });
 </script>
 @endpush

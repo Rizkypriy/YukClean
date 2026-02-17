@@ -19,7 +19,7 @@ class PromoController extends Controller
             ->orderBy('end_date', 'asc')  // <-- Sesuai database
             ->get();
 
-        return view('promo.index', compact('promos'));
+        return view('user.promo.index', compact('promos'));
     }
 
     public function check(Request $request)

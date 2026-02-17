@@ -29,7 +29,7 @@ return new class extends Migration
             $table->text('special_conditions')->nullable()->comment('Kondisi khusus');
             
             // Booking schedule
-            $table->date('booking_date');
+            $table->date('order_date');
             $table->time('start_time');
             $table->time('end_time');
             
@@ -56,7 +56,7 @@ return new class extends Migration
             $table->index('order_number');
             $table->index('user_id');
             $table->index('status');
-            $table->index('booking_date');
+            $table->index('order_date');
         });
     }
 

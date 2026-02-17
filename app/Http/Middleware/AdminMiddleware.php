@@ -1,4 +1,5 @@
 <?php
+// app/Http/Middleware/AdminMiddleware.php
 
 namespace App\Http\Middleware;
 
@@ -13,15 +14,19 @@ class AdminMiddleware
      */
     public function handle(Request $request, Closure $next)
     {
-        if (!Auth::check()) {
-            return redirect()->route('login')->with('error', 'Silakan login terlebih dahulu');
+        // Cek apakah admin sudah login menggunakan guard 'admin'
+        if (!Auth::guard('admin')->check()) {
+            return redirect()->route('admin.login')->with('error', 'Silakan login sebagai admin terlebih dahulu');
         }
 
-        // Cek apakah user adalah admin
-        // Asumsikan ada kolom 'role' di tabel users
-        if (Auth::user()->role !== 'admin') {
-            return redirect()->route('home')->with('error', 'Anda tidak memiliki akses ke halaman ini');
-        }
+        // OPTIONAL: Cek role admin jika ada (super_admin atau admin biasa)
+        $admin = Auth::guard('admin')->user();
+        
+        // Jika Anda ingin membedakan akses berdasarkan role
+        // Misalnya: hanya super_admin yang bisa akses某些 halaman
+        // if ($admin->role !== 'super_admin' && $request->routeIs('admin.super.*')) {
+        //     return redirect()->route('admin.dashboard')->with('error', 'Anda tidak memiliki akses ke halaman ini');
+        // }
 
         return $next($request);
     }

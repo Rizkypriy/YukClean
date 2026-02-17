@@ -7,13 +7,14 @@ use App\Models\Service;
 use App\Models\Bundle;
 use App\Models\Promo;
 use App\Models\User;
+use App\Models\Payment;
+use App\Models\CleanerTask; // <-- TAMBAHKAN UNTUK INTEGRASI CLEANER
 use App\Http\Requests\OrderRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log; // <-- TAMBAHKAN INI
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
-use App\Models\Payment; // <-- TAMBAHKAN INI
 
 class OrderController extends Controller
 {
@@ -22,8 +23,12 @@ class OrderController extends Controller
         $this->middleware('auth');
     }
 
+    /**
+     * Display a listing of orders for the authenticated user.
+     */
     public function index()
     {
+        /** @var User $user */
         $user = Auth::user();
         
         $activeOrders = Order::with(['service', 'bundle'])
@@ -38,287 +43,353 @@ class OrderController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
             
-        return view('orders.index', compact('activeOrders', 'historyOrders'));
+        return view('user.orders.index', compact('activeOrders', 'historyOrders'));
     }
 
+    /**
+     * Show form for creating a service order.
+     */
     public function create(Service $service)
     {
         if (!$service->is_active) {
-            return redirect()->route('home')->with('error', 'Layanan tidak tersedia');
+            return redirect()->route('user.dashboard')->with('error', 'Layanan tidak tersedia');
         }
-        return view('orders.create', compact('service'));
+        return view('user.orders.create', compact('service'));
     }
 
+    /**
+     * Show form for creating a bundle order.
+     */
     public function createBundle(Bundle $bundle)
     {
         if (!$bundle->is_active) {
-            return redirect()->route('home')->with('error', 'Paket tidak tersedia');
+            return redirect()->route('user.dashboard')->with('error', 'Paket tidak tersedia');
         }
-        return view('orders.create-bundle', compact('bundle'));
+        return view('user.orders.create-bundle', compact('bundle'));
     }
 
+    /**
+     * Store a newly created order.
+     */
     public function store(OrderRequest $request)
-{
-    // Validasi jam
-    if ($request->start_time >= $request->end_time) {
-        return back()->with('error', 'Jam selesai harus setelah jam mulai.')
-            ->withInput();
-    }
+    {
+        // 1. Standarisasi Format Waktu
+        $startTime = Carbon::parse($request->start_time)->format('H:i:s');
+        $endTime = Carbon::parse($request->end_time)->format('H:i:s');
+        $orderDate = $request->booking_date ?? date('Y-m-d');
 
-    // CEK BOOKING DATE
-    $orderDate = $request->booking_date ?? date('Y-m-d');
-
-    // Cek ketersediaan jam
-    $existingOrder = Order::where('order_date', $orderDate)
-        ->where('start_time', '<=', $request->end_time)
-        ->where('end_time', '>=', $request->start_time)
-        ->whereIn('status', ['pending', 'confirmed', 'on_progress'])
-        ->exists();
-
-    if ($existingOrder) {
-        return back()->with('error', 'Jam yang dipilih sudah dibooking. Silakan pilih jam lain.')
-            ->withInput();
-    }
-
-    DB::beginTransaction();
-    
-    try {
-        $user = User::find(Auth::id());
-        
-        // Calculate subtotal - BISA SERVICE ATAU BUNDLE
-        $serviceId = null;
-        $bundleId = null;
-        $subtotal = 0;
-        
-        if ($request->service_id) {
-            $service = Service::findOrFail($request->service_id);
-            $subtotal = $service->price;
-            $serviceId = $service->id;
-        } elseif ($request->bundle_id) {
-            $bundle = Bundle::findOrFail($request->bundle_id);
-            $subtotal = $bundle->price;
-            $bundleId = $bundle->id;
-        } else {
-            throw new \Exception('Pilih layanan atau paket');
+        // Validasi jam
+        if ($startTime >= $endTime) {
+            return back()->with('error', 'Jam selesai harus setelah jam mulai.')->withInput();
         }
 
-        // Calculate discount
-        $discount = 0;
-        $promoId = null;
-        
-        if ($request->filled('promo_code')) {
-            $promo = Promo::where('code', $request->promo_code)
-                ->where('is_active', true)
-                ->where('start_date', '<=', now())
-                ->where('end_date', '>=', now())
-                ->first();
+        // 2. Cek Overlap Jam
+        $existingOrder = Order::where('order_date', $orderDate)
+            ->whereIn('status', ['pending', 'confirmed', 'on_progress'])
+            ->where(function($query) use ($startTime, $endTime) {
+                $query->where('start_time', '<', $endTime)
+                      ->where('end_time', '>', $startTime);
+            })
+            ->exists();
+
+        if ($existingOrder) {
+            return back()->with('error', 'Jam tersebut sudah dipesan. Silakan pilih jam lain.')->withInput();
+        }
+
+        DB::beginTransaction();
+        try {
+            /** @var User $user */
+            $user = Auth::user();
             
-            if ($promo && $subtotal >= $promo->min_purchase) {
-                if ($promo->discount_type === 'percentage') {
-                    $discount = $subtotal * $promo->discount_value / 100;
-                } else {
-                    $discount = min($promo->discount_value, $subtotal);
-                }
-                $promoId = $promo->id;
+            // 3. Hitung Subtotal
+            $serviceId = null;
+            $bundleId = null;
+            $subtotal = 0;
+            $serviceName = '';
+            $serviceType = 'regular';
+            
+            if ($request->service_id) {
+                $service = Service::findOrFail($request->service_id);
+                $subtotal = $service->price;
+                $serviceId = $service->id;
+                $serviceName = $service->name;
+                $serviceType = $service->type ?? 'regular';
+            } elseif ($request->bundle_id) {
+                $bundle = Bundle::findOrFail($request->bundle_id);
+                $subtotal = $bundle->price;
+                $bundleId = $bundle->id;
+                $serviceName = $bundle->name;
+                $serviceType = 'bundle';
+            } else {
+                throw new \Exception('Pilih layanan atau paket terlebih dahulu');
             }
+
+            // 4. Hitung Diskon
+            $discount = 0;
+            $promoId = null;
+            if ($request->filled('promo_code')) {
+                $promo = Promo::where('code', $request->promo_code)
+                    ->where('is_active', true)
+                    ->where('start_date', '<=', now())
+                    ->where('end_date', '>=', now())
+                    ->first();
+                
+                if ($promo && $subtotal >= $promo->min_purchase) {
+                    $discount = ($promo->discount_type === 'percentage') 
+                        ? ($subtotal * $promo->discount_value / 100) 
+                        : min($promo->discount_value, $subtotal);
+                    $promoId = $promo->id;
+                }
+            }
+
+            $total = max(0, $subtotal - $discount);
+
+            // 5. Generate Order Number
+            $datePrefix = date('Ymd');
+            $lastOrder = Order::where('order_number', 'like', "ORD-{$datePrefix}-%")->latest('id')->first();
+            $sequence = $lastOrder ? (intval(substr($lastOrder->order_number, -4)) + 1) : 1;
+            $orderNumber = "ORD-{$datePrefix}-" . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+
+            // 6. Simpan Order
+            $order = Order::create([
+                'order_number' => $orderNumber,
+                'user_id' => $user->id,
+                'service_id' => $serviceId,
+                'bundle_id' => $bundleId,
+                'promo_id' => $promoId,
+                'customer_name' => $request->customer_name,
+                'customer_phone' => $request->customer_phone,
+                'address' => $request->address,
+                'order_date' => $orderDate,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'subtotal' => $subtotal,
+                'discount' => $discount,
+                'total' => $total,
+                'notes' => $request->notes,
+                'status' => 'pending', // Status awal pending
+            ]);
+
+            // 7. Update total orders user
+            User::where('id', $user->id)->increment('total_orders');
+
+            DB::commit();
+
+            return redirect()->route('user.payments.create', $order)
+                ->with('success', 'Pesanan berhasil dibuat! Silakan lakukan pembayaran.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Order Store Error: ' . $e->getMessage());
+            return back()->with('error', 'Gagal membuat pesanan: ' . $e->getMessage())->withInput();
         }
+    }
 
-        $total = $subtotal - $discount;
-        if ($total < 0) $total = 0;
-
-        // Generate order number
-        $date = date('Ymd');
-        $lastOrder = Order::where('order_number', 'like', "ORD-{$date}-%")
-            ->orderBy('id', 'desc')
-            ->first();
-        
-        $newNumber = $lastOrder ? str_pad(intval(substr($lastOrder->order_number, -4)) + 1, 4, '0', STR_PAD_LEFT) : '0001';
-        $orderNumber = "ORD-{$date}-{$newNumber}";
-
-        // CREATE ORDER - service_id dan bundle_id bisa null
-        $order = Order::create([
-            'order_number' => $orderNumber,
-            'user_id' => $user->id,
-            'service_id' => $serviceId, // <-- BISA NULL
-            'bundle_id' => $bundleId,   // <-- BISA NULL
-            'promo_id' => $promoId,
-            'customer_name' => $request->customer_name,
-            'customer_phone' => $request->customer_phone,
-            'address' => $request->address,
-            'order_date' => $orderDate,
-            'start_time' => $request->start_time,
-            'end_time' => $request->end_time,
-            'subtotal' => $subtotal,
-            'discount' => $discount,
-            'total' => $total,
-            'notes' => $request->notes,
-            'status' => 'pending',
+    /**
+     * Check availability for a specific date and time.
+     */
+    public function checkAvailability(Request $request)
+    {
+        $request->validate([
+            'date' => 'required|date',
+            'start_time' => 'required',
+            'end_time' => 'required'
         ]);
 
-        $user->increment('total_orders');
+        $startTime = Carbon::parse($request->start_time)->format('H:i:s');
+        $endTime = Carbon::parse($request->end_time)->format('H:i:s');
 
-        DB::commit();
+        $exists = Order::where('order_date', $request->date)
+            ->whereIn('status', ['pending', 'confirmed', 'on_progress'])
+            ->where(function($q) use ($startTime, $endTime) {
+                $q->where('start_time', '<', $endTime)
+                  ->where('end_time', '>', $startTime);
+            })
+            ->exists();
 
-        return redirect()->route('payments.create', $order)
-            ->with('success', 'Pesanan berhasil dibuat! Silakan lakukan pembayaran.');
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        Log::error('Order creation failed: ' . $e->getMessage());
-        return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())
-            ->withInput();
+        return response()->json([
+            'available' => !$exists,
+            'message' => !$exists ? 'Jam tersedia' : 'Jam sudah dibooking'
+        ]);
     }
-}
 
+    /**
+     * Display the specified order.
+     */
     public function show(Order $order)
     {
         if ($order->user_id !== Auth::id()) {
             abort(403);
         }
         $order->load(['service', 'bundle', 'promo']);
-        return view('orders.show', compact('order'));
+        return view('user.orders.show', compact('order'));
     }
 
-  public function cancel(Request $request, Order $order)
-{
-    if ($order->user_id !== Auth::id()) {
-        abort(403);
-    }
-
-    // Cek apakah order bisa dibatalkan (pending atau confirmed)
-    if (!in_array($order->status, ['pending', 'confirmed'])) {
-        return back()->with('error', 'Pesanan tidak dapat dibatalkan karena statusnya ' . $order->status);
-    }
-
-    // Cek apakah sudah melewati tanggal (opsional)
-    if ($order->order_date < now()->format('Y-m-d')) {
-        return back()->with('error', 'Pesanan tidak dapat dibatalkan karena sudah melewati tanggal layanan');
-    }
-
-    $request->validate([
-        'cancellation_reason' => 'required|string|max:500',
-    ]);
-
-    DB::beginTransaction();
-    
-    try {
-        // Jika pesanan sudah dibayar (confirmed), lakukan refund
-        if ($order->status === 'confirmed') {
-            $payment = Payment::where('order_id', $order->id)->where('payment_status', 'paid')->first();
-            
-            if ($payment) {
-                // Proses refund (simulasi)
-                // Di sini Anda bisa panggil API payment gateway untuk refund
-                // Contoh: PaymentGateway::refund($payment->transaction_id, $payment->total);
-                
-                $payment->update([
-                    'payment_status' => 'refunded', // Tambah status 'refunded' di enum payment_status
-                    'refunded_at' => now(),
-                ]);
-            }
+    /**
+     * Cancel an order.
+     */
+    public function cancel(Request $request, Order $order)
+    {
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
         }
 
-        // Batalkan order
-        $order->update([
-            'status' => 'cancelled',
-            'cancellation_reason' => $request->cancellation_reason,
-        ]);
+        if (!in_array($order->status, ['pending', 'confirmed'])) {
+            return back()->with('error', 'Pesanan tidak dapat dibatalkan karena statusnya ' . $order->status);
+        }
 
-        DB::commit();
+        $request->validate(['cancellation_reason' => 'required|string|max:500']);
 
-        return redirect()->route('orders.show', $order)
-            ->with('success', 'Pesanan berhasil dibatalkan' . ($order->status === 'confirmed' ? ' dan refund akan diproses' : ''));
+        DB::beginTransaction();
+        try {
+            // Jika pesanan sudah dibayar (confirmed), lakukan refund
+            if ($order->status === 'confirmed') {
+                $payment = Payment::where('order_id', $order->id)->where('payment_status', 'paid')->first();
+                if ($payment) {
+                    $payment->update([
+                        'payment_status' => 'refunded',
+                        'refunded_at' => now(),
+                    ]);
+                }
+            }
 
-    } catch (\Exception $e) {
-        DB::rollBack();
-        Log::error('Cancel failed: ' . $e->getMessage());
-        return back()->with('error', 'Gagal membatalkan pesanan');
+            // Batalkan order
+            $order->update([
+                'status' => 'cancelled',
+                'cancellation_reason' => $request->cancellation_reason,
+            ]);
+
+            // Jika ada cleaner task yang terkait, batalkan juga
+            $cleanerTask = \App\Models\CleanerTask::where('order_id', $order->id)->first();
+            if ($cleanerTask && $cleanerTask->status === 'assigned') {
+                $cleanerTask->update(['status' => 'cancelled']);
+            }
+
+            DB::commit();
+
+            return redirect()->route('user.orders.show', $order)
+                ->with('success', 'Pesanan berhasil dibatalkan.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Order Cancel Error: ' . $e->getMessage());
+            return back()->with('error', 'Gagal membatalkan pesanan.');
+        }
     }
-}
 
+    /**
+     * Track order progress.
+     */
+    public function track(Order $order)
+    {
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
+        
+        // Ambil data cleaner task jika ada
+        $cleanerTask = \App\Models\CleanerTask::where('order_id', $order->id)->first();
+        
+        return view('user.orders.track', compact('order', 'cleanerTask'));
+    }
+
+    /**
+     * Mark order as completed (after payment confirmation).
+     */
+    public function complete(Order $order)
+    {
+        if ($order->user_id !== Auth::id() && !Auth::user()->isAdmin()) {
+            abort(403);
+        }
+
+        if ($order->status !== 'confirmed') {
+            return back()->with('error', 'Hanya pesanan dengan status confirmed yang dapat diselesaikan');
+        }
+
+        DB::beginTransaction();
+        try {
+            $order->update(['status' => 'completed']);
+
+            // Update payment jika ada
+            $payment = Payment::where('order_id', $order->id)->first();
+            if ($payment) {
+                $payment->update(['payment_status' => 'paid']);
+            }
+
+            DB::commit();
+
+            return redirect()->route('user.orders.completed', $order)
+                ->with('success', 'Pesanan selesai! Terima kasih.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Order Complete Error: ' . $e->getMessage());
+            return back()->with('error', 'Gagal menyelesaikan pesanan');
+        }
+    }
+
+    /**
+     * Show completed order page.
+     */
+    public function completed(Order $order)
+    {
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        if ($order->status !== 'completed') {
+            return redirect()->route('user.orders.show', $order)
+                ->with('error', 'Pesanan belum selesai');
+        }
+
+        return view('user.orders.completed', compact('order'));
+    }
+
+    /**
+     * Check promo code (AJAX)
+     */
     public function checkPromo(Request $request)
     {
+        $request->validate([
+            'code' => 'required|string',
+            'subtotal' => 'required|numeric|min:0'
+        ]);
+
         $promo = Promo::where('code', $request->code)
             ->where('is_active', true)
             ->where('start_date', '<=', now())
             ->where('end_date', '>=', now())
             ->first();
 
-        if (!$promo || $request->subtotal < $promo->min_purchase) {
-            return response()->json(['valid' => false]);
+        if (!$promo) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Kode promo tidak valid atau sudah kadaluarsa'
+            ]);
         }
 
-        $discount = $promo->discount_type === 'percentage' 
-            ? $request->subtotal * $promo->discount_value / 100 
-            : min($promo->discount_value, $request->subtotal);
+        if ($request->subtotal < $promo->min_purchase) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Minimal pembelian Rp ' . number_format($promo->min_purchase, 0, ',', '.')
+            ]);
+        }
+
+        if ($promo->discount_type === 'percentage') {
+            $discount = $request->subtotal * $promo->discount_value / 100;
+        } else {
+            $discount = min($promo->discount_value, $request->subtotal);
+        }
 
         return response()->json([
             'valid' => true,
-            'discount' => $discount,
+            'promo' => [
+                'id' => $promo->id,
+                'code' => $promo->code,
+                'title' => $promo->title,
+                'discount' => $discount,
+                'formatted_discount' => 'Rp ' . number_format($discount, 0, ',', '.'),
+            ],
             'total' => $request->subtotal - $discount
         ]);
     }
-
-    public function checkAvailability(Request $request)
-{
-    $request->validate([
-        'date' => 'required|date',
-        'start_time' => 'required|date_format:H:i',
-        'end_time' => 'required|date_format:H:i|after:start_time'
-    ]);
-
-    $exists = Order::where('order_date', $request->date)
-        ->where(function($query) use ($request) {
-            $query->where(function($q) use ($request) {
-                $q->where('start_time', '<=', $request->start_time)
-                  ->where('end_time', '>', $request->start_time);
-            })->orWhere(function($q) use ($request) {
-                $q->where('start_time', '<', $request->end_time)
-                  ->where('end_time', '>=', $request->end_time);
-            })->orWhere(function($q) use ($request) {
-                $q->where('start_time', '>=', $request->start_time)
-                  ->where('end_time', '<=', $request->end_time);
-            });
-        })
-        ->whereIn('status', ['pending', 'confirmed', 'on_progress'])
-        ->exists();
-
-    return response()->json([
-        'available' => !$exists,
-        'message' => !$exists ? 'Jam tersedia' : 'Jam sudah dibooking'
-    ]);
-}
-
-/**
- * Track order progress
- */
-public function track(Order $order)
-{
-    // Pastikan user hanya bisa track order miliknya
-    if ($order->user_id !== Auth::id()) {
-        abort(403, 'Anda tidak memiliki akses ke pesanan ini.');
-    }
-    
-    $order->load(['service', 'bundle']);
-    
-    return view('orders.track', compact('order'));
-}
-/**
- * Show completed order page
- */
-public function completed(Order $order)
-{
-    // Pastikan user hanya bisa lihat order miliknya
-    if ($order->user_id !== Auth::id()) {
-        abort(403, 'Anda tidak memiliki akses ke pesanan ini.');
-    }
-
-    // Pastikan order sudah completed
-    if ($order->status !== 'completed') {
-        return redirect()->route('orders.show', $order)
-            ->with('error', 'Pesanan belum selesai');
-    }
-
-    return view('orders.completed', compact('order'));
-}
 }

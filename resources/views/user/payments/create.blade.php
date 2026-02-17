@@ -1,3 +1,4 @@
+{{-- resources/views/user/payments/create.blade.php --}}
 @extends('layouts.app')
 
 @section('title', 'Pembayaran')
@@ -5,8 +6,8 @@
 @section('content')
 <div class="min-h-screen bg-white pb-24">
     {{-- Header --}}
-    <div class="bg-linear-to-r from-green-500 to-green-600 p-6 text-white">
-        <a href="{{ route('orders.show', $order) }}" class="inline-flex items-center text-white mb-4">
+    <div class="bg-gradient-to-r from-green-500 to-green-600 p-6 text-white">  {{-- PERBAIKAN: dari 'bg-linear-to-r' ke 'bg-gradient-to-r' --}}
+        <a href="{{ route('user.orders.show', $order) }}" class="inline-flex items-center text-white mb-4">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
@@ -73,7 +74,7 @@
                 qris: { name: 'QRIS', icon: '📲', providers: [] }
             }
         }">
-            <form action="{{ route('payments.store', $order) }}" method="POST">
+            <form action="{{ route('user.payments.store', $order) }}" method="POST">
                 @csrf
                 
                 {{-- Hidden inputs untuk menyimpan pilihan --}}
@@ -200,6 +201,7 @@
     </div>
 </div>
 
+{{-- Script untuk Alpine.js --}}
 @push('scripts')
 <script src="//unpkg.com/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
 <script defer src="//unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>

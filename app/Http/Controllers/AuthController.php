@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Validator;
 class AuthController extends Controller
 {
     /**
-     * Show login form
+     * Show login form for user
      */
     public function showLoginForm()
     {
@@ -19,7 +19,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Handle login request
+     * Handle login request for user
      */
     public function login(Request $request)
     {
@@ -29,18 +29,21 @@ class AuthController extends Controller
             'password' => 'required'
         ], [
             'email.required' => 'Email harus diisi',
-            'email.email' => 'Format email tidak valid',
+            'email.email'   => 'Format email tidak valid',
             'password.required' => 'Password harus diisi'
         ]);
 
-        // Coba login
+        // Coba login dengan guard 'web' (default)
         if (Auth::attempt($credentials, $request->filled('remember'))) {
             // Regenerasi session untuk keamanan
             $request->session()->regenerate();
             
-            // Redirect ke home dengan pesan sukses
-            return redirect()->intended('/')
-                ->with('success', 'Selamat datang kembali, ' . Auth::user()->name . '!');
+            // Dapatkan nama user
+            $userName = Auth::user()->name;
+            
+            // Redirect ke dashboard user
+            return redirect()->intended(route('user.dashboard'))
+                ->with('success', "Selamat datang kembali, $userName! 👋");
         }
 
         // Jika login gagal
@@ -50,7 +53,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Show register form
+     * Show register form for user
      */
     public function showRegisterForm()
     {
@@ -58,26 +61,26 @@ class AuthController extends Controller
     }
 
     /**
-     * Handle register request
+     * Handle register request for user
      */
     public function register(Request $request)
     {
         // Validasi input
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'phone' => 'required|string|max:20',
-            'address' => 'required|string',
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|string|email|max:255|unique:users',
+            'phone'    => 'required|string|max:20',
+            'address'  => 'required|string',
             'password' => 'required|string|min:8|confirmed',
         ], [
-            'name.required' => 'Nama lengkap harus diisi',
-            'email.required' => 'Email harus diisi',
-            'email.email' => 'Format email tidak valid',
-            'email.unique' => 'Email sudah terdaftar',
-            'phone.required' => 'Nomor telepon harus diisi',
-            'address.required' => 'Alamat harus diisi',
+            'name.required'     => 'Nama lengkap harus diisi',
+            'email.required'    => 'Email harus diisi',
+            'email.email'       => 'Format email tidak valid',
+            'email.unique'      => 'Email sudah terdaftar',
+            'phone.required'    => 'Nomor telepon harus diisi',
+            'address.required'  => 'Alamat harus diisi',
             'password.required' => 'Password harus diisi',
-            'password.min' => 'Password minimal 8 karakter',
+            'password.min'      => 'Password minimal 8 karakter',
             'password.confirmed' => 'Konfirmasi password tidak cocok'
         ]);
 
@@ -87,24 +90,26 @@ class AuthController extends Controller
 
         // Buat user baru
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'address' => $request->address,
-            'password' => Hash::make($request->password),
-            'member_level' => 'Regular',
-            'total_orders' => 0,
+            'name'          => $request->name,
+            'email'         => $request->email,
+            'phone'         => $request->phone,
+            'address'       => $request->address,
+            'password'      => Hash::make($request->password),
+            'member_level'  => 'Regular',
+            'total_orders'  => 0,
+            'role'          => 'user', // Default role
         ]);
 
         // Login otomatis setelah register
         Auth::login($user);
 
-        // Redirect ke home dengan pesan sukses
-        return redirect('/')->with('success', 'Registrasi berhasil! Selamat datang di Yuk Clean.');
+        // Redirect ke dashboard user
+        return redirect()->route('user.dashboard')
+            ->with('success', 'Registrasi berhasil! Selamat datang di Yuk Clean. 🎉');
     }
 
     /**
-     * Handle logout
+     * Handle logout for user
      */
     public function logout(Request $request)
     {
@@ -114,6 +119,7 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         
-        return redirect('/login')->with('success', 'Anda telah berhasil logout.');
+        return redirect()->route('login.landing')
+            ->with('success', 'Anda telah berhasil logout. Sampai jumpa! 👋');
     }
 }

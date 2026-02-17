@@ -1,20 +1,19 @@
-{{-- resources/views/auth/register.blade.php --}}
-@extends('layouts.app')
+{{-- resources/views/cleaner/auth/register.blade.php --}}
+@extends('cleaner.layouts.app')
 
-@section('title', 'Daftar User')
+@section('title', 'Daftar Petugas')
 
 @section('content')
 <div class="min-h-screen bg-white p-6">
-    {{-- Header --}}
     <div class="mb-8">
-        <h1 class="text-3xl font-bold text-green-600">Daftar<br>Yuk Clean</h1>
-        <p class="text-gray-600 mt-2">Buat akun baru untuk mulai menggunakan layanan</p>
+        <h1 class="text-3xl font-bold text-green-600">Daftar<br>Yuk Clean Petugas</h1>
+        <p class="text-gray-600 mt-2">Buat akun baru untuk mulai bekerja</p>
     </div>
 
-    {{-- Alert Error --}}
+    {{-- Tampilkan error validasi --}}
     @if($errors->any())
         <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4">
-            <ul>
+            <ul class="list-disc list-inside">
                 @foreach($errors->all() as $error)
                     <li>{{ $error }}</li>
                 @endforeach
@@ -22,8 +21,7 @@
         </div>
     @endif
 
-    {{-- Form Register --}}
-    <form method="POST" action="{{ route('user.register.submit') }}">  {{-- PERBAIKAN: dari 'register' ke 'user.register.submit' --}}
+    <form method="POST" action="{{ route('cleaner.register.submit') }}">
         @csrf
         
         {{-- Nama Lengkap --}}
@@ -32,6 +30,9 @@
             <input type="text" name="name" value="{{ old('name') }}" 
                 class="w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-green-300 {{ $errors->has('name') ? 'border-red-500' : 'border-gray-200' }}"
                 placeholder="Masukkan nama lengkap" required>
+            @error('name')
+                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+            @enderror
         </div>
 
         {{-- Email --}}
@@ -39,7 +40,10 @@
             <label class="block text-gray-700 text-sm font-medium mb-2">Email</label>
             <input type="email" name="email" value="{{ old('email') }}" 
                 class="w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-green-300 {{ $errors->has('email') ? 'border-red-500' : 'border-gray-200' }}"
-                placeholder="contoh@email.com" required>
+                placeholder="petugas@email.com" required>
+            @error('email')
+                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+            @enderror
         </div>
 
         {{-- Nomor Telepon --}}
@@ -48,14 +52,22 @@
             <input type="tel" name="phone" value="{{ old('phone') }}" 
                 class="w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-green-300 {{ $errors->has('phone') ? 'border-red-500' : 'border-gray-200' }}"
                 placeholder="08xxxxxxxxxx" required>
+            @error('phone')
+                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+            @enderror
         </div>
 
-        {{-- Alamat --}}
+        {{-- Jenis Kelamin --}}
         <div class="mb-4">
-            <label class="block text-gray-700 text-sm font-medium mb-2">Alamat</label>
-            <textarea name="address" rows="2" 
-                class="w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-green-300 {{ $errors->has('address') ? 'border-red-500' : 'border-gray-200' }}"
-                placeholder="Masukkan alamat lengkap" required>{{ old('address') }}</textarea>
+            <label class="block text-gray-700 text-sm font-medium mb-2">Jenis Kelamin</label>
+            <select name="gender" class="w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-green-300 {{ $errors->has('gender') ? 'border-red-500' : 'border-gray-200' }}" required>
+                <option value="">Pilih jenis kelamin</option>
+                <option value="Laki-laki" {{ old('gender') == 'Laki-laki' ? 'selected' : '' }}>Laki-laki</option>
+                <option value="Perempuan" {{ old('gender') == 'Perempuan' ? 'selected' : '' }}>Perempuan</option>
+            </select>
+            @error('gender')
+                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+            @enderror
         </div>
 
         {{-- Password --}}
@@ -64,6 +76,9 @@
             <input type="password" name="password" 
                 class="w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-green-300 {{ $errors->has('password') ? 'border-red-500' : 'border-gray-200' }}"
                 placeholder="Minimal 8 karakter" required>
+            @error('password')
+                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+            @enderror
         </div>
 
         {{-- Konfirmasi Password --}}
@@ -83,9 +98,9 @@
         {{-- Link Login --}}
         <p class="text-center mt-4 text-gray-600">
             Sudah punya akun? 
-            <a href="{{ route('user.login') }}" class="text-green-600 font-medium hover:underline">Masuk</a>  {{-- PERBAIKAN: dari 'login' ke 'user.login' --}}
+            <a href="{{ route('cleaner.login') }}" class="text-green-600 font-medium hover:underline">Masuk</a>
         </p>
-        
+
         {{-- Link kembali ke landing page --}}
         <p class="text-center mt-2">
             <a href="{{ route('login.landing') }}" class="text-sm text-gray-500 hover:underline">

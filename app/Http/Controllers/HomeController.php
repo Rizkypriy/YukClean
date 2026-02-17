@@ -19,8 +19,8 @@ class HomeController extends Controller
         
         // Ambil data promo aktif (max 2 untuk ditampilkan di home)
         $promos = Promo::where('is_active', true)
-            ->where('start_date', '<=', now())
-            ->where('end_date', '>=', now())
+            ->where('valid_from', '<=', now())
+            ->where('valid_until', '>=', now())
             ->limit(2)
             ->get();
         
@@ -34,7 +34,7 @@ class HomeController extends Controller
                     'title' => 'Diskon 20% Pengguna Baru!',
                     'description' => 'Untuk pemesanan pertama Anda',
                     'icon' => '🏷️',
-                    'background_color' => 'linear-gradient(135deg, #ff861d 0%, #f73798 100%)'
+                    'background_color' => 'linear-gradient(135deg, #be79ff 0%, #645fff 100%)'
                 ],
                 (object)[
                     'title' => 'Promo Bundling Rumah!',
@@ -45,7 +45,7 @@ class HomeController extends Controller
             ]);
         }
 
-        return view('home.index', compact('services', 'promos', 'bundles'));
+        return view('user.home.index', compact('services', 'promos', 'bundles'));
     }
 
     /**

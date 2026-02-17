@@ -40,7 +40,7 @@
     <div class="px-6 mt-6 space-y-4">
         @forelse($promos as $promo)
         <div class="rounded-2xl p-3 text-white shadow-lg relative overflow-hidden"
-            style="background: {{ $promo->background_color ?? 'linear-gradient(135deg, #ff861d 0%, #f73798 100%)' }};">
+            style="background: {{ $promo->background_color ?? 'linear-gradient(135deg, #be79ff 0%, #645fff 100%)' }};">
             {{-- Pattern/Texture --}}
             <div class="absolute top-0 right-0 w-28 h-28 bg-white opacity-10 rounded-full -mr-8 -mt-8"></div>
             <div class="absolute bottom-0 left-0 w-20 h-20 bg-white opacity-10 rounded-full -ml-6 -mb-6"></div>
@@ -56,7 +56,7 @@
         @empty
         {{-- Tampilkan promo default jika tidak ada di database --}}
         <div class="rounded-2xl p-3 text-white shadow-lg relative overflow-hidden"
-            style="background: linear-gradient(135deg, #ff861d 0%, #f73798 100%);">
+            style="background: linear-gradient(135deg, #be79ff 0%, #645fff  100%);">
             <div class="absolute top-0 right-0 w-28 h-28 bg-white opacity-10 rounded-full -mr-8 -mt-8"></div>
             <div class="absolute bottom-0 left-0 w-20 h-20 bg-white opacity-10 rounded-full -ml-6 -mb-6"></div>
             <div class="relative">
@@ -102,7 +102,7 @@
                     </div>
                     <p class="text-green-600 font-bold text-sm mt-auto text-center">{{ $service->formatted_price }}</p>
                 </div>
-                <a href="{{ route('orders.create', $service) }}" 
+                <a href="{{ route('user.orders.create', $service) }}" 
                    class="w-full text-white py-2.5 rounded-lg text-xs font-medium transition-all duration-300 mt-4 shadow-md hover:shadow-lg text-center block"
                    style="background: linear-gradient(135deg, #00bca4 0%, #00c954 100%);"
                    onmouseover="this.style.background='linear-gradient(135deg, #00a08b 0%, #00b045 100%)'"
@@ -140,7 +140,7 @@
                             <span class="text-2xl font-bold text-green-600">{{ $bundle->formatted_price }}</span>
                             <span class="text-sm line-through opacity-75 text-black">{{ $bundle->formatted_original_price }}</span>
                         </div>
-                        <a href="{{ route('orders.create.bundle', $bundle) }}" 
+                        <a href="{{ route('user.orders.create.bundle', $bundle) }}" 
                            class="w-full text-white py-2.5 rounded-lg text-xs font-medium transition-all duration-300 mt-4 shadow-md hover:shadow-lg text-center block"
                            style="background: linear-gradient(135deg, #00bca4 0%, #00c954 100%);"
                            onmouseover="this.style.background='linear-gradient(135deg, #00a08b 0%, #00b045 100%)'"

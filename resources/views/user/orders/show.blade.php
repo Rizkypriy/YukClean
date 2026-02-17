@@ -6,7 +6,7 @@
 <div class="min-h-screen bg-white pb-24">
     {{-- Header --}}
     <div class="bg-linear-to-r from-green-500 to-green-600 p-6 text-white">
-        <a href="{{ route('orders.index') }}" class="inline-flex items-center text-white mb-4">
+        <a href="{{ route('user.orders.index') }}" class="inline-flex items-center text-white mb-4">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
@@ -190,7 +190,7 @@
     <div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4">
         <h3 class="text-xl font-bold text-gray-800 mb-4">Batalkan Pesanan</h3>
         <p class="text-gray-600 mb-4">Apakah Anda yakin ingin membatalkan pesanan ini?</p>
-        <form action="{{ route('orders.cancel', $order) }}" method="POST">
+        <form action="{{ route('user.orders.cancel', $order) }}" method="POST">
             @csrf
             <textarea name="cancellation_reason" rows="3" 
                 class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-300 mb-4"

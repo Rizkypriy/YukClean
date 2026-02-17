@@ -11,20 +11,27 @@ return new class extends Migration
     {
         Schema::create('cleaner_tasks', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('cleaner_id')->constrained()->onDelete('cascade');
-            $table->foreignId('order_id')->constrained()->onDelete('cascade');
+            $table->foreignId('cleaner_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('order_id')->constrained()->cascadeOnDelete();
             $table->string('customer_name');
             $table->string('customer_phone')->nullable();
             $table->text('address');
             $table->decimal('latitude', 10, 8)->nullable();
             $table->decimal('longitude', 11, 8)->nullable();
-            $table->string('service_type');
-            $table->enum('task_type', ['regular', 'deep_cleaning', 'bathroom', 'window']);
+            $table->string('service_name');
+            $table->enum('service_type', ['regular', 'deep_cleaning', 'bathroom', 'window', 'kitchen', 'bundle'])->default('regular');
             $table->date('task_date');
             $table->time('start_time');
             $table->time('end_time');
             $table->decimal('distance_km', 5, 2)->nullable();
-            $table->enum('status', ['assigned', 'on_the_way', 'in_progress', 'completed', 'cancelled'])->default('assigned');
+            $table->enum('status', [
+                'available',    // Tersedia untuk diambil cleaner
+                'assigned',     // Sudah diambil cleaner
+                'on_the_way',   // Menuju lokasi
+                'in_progress',  // Sedang bekerja
+                'completed',    // Selesai
+                'cancelled'     // Dibatalkan
+            ])->default('available');
             $table->timestamp('started_at')->nullable();
             $table->timestamp('completed_at')->nullable();
             $table->text('notes')->nullable();

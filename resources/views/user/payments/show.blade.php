@@ -6,7 +6,7 @@
 <div class="min-h-screen bg-white pb-24">
     {{-- Header --}}
     <div class="bg-linear-to-r from-green-500 to-green-600 p-6 text-white">
-        <a href="{{ route('orders.show', $payment->order) }}" class="inline-flex items-center text-white mb-4">
+        <a href="{{ route('user.orders.show', $payment->order) }}" class="inline-flex items-center text-white mb-4">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
@@ -151,7 +151,7 @@
             </p>
         </div>
 
-        <form action="{{ route('payments.confirm', $payment) }}" method="POST">
+        <form action="{{ route('user.payments.confirm', $payment) }}" method="POST">
             @csrf
             <div class="flex gap-3">
                 <button type="button" onclick="hidePaymentModal()"
