@@ -98,6 +98,7 @@ Route::prefix('user')->name('user.')->group(function () {
             Route::get('/{payment}', [PaymentController::class, 'show'])->name('show');
             Route::post('/{payment}/confirm', [PaymentController::class, 'confirm'])->name('confirm');
             Route::post('/{payment}/cancel', [PaymentController::class, 'cancel'])->name('cancel');
+            Route::get('/processing/{order}', [PaymentController::class, 'processing'])->name('processing');
         });
     });
 });

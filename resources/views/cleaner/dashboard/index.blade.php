@@ -4,49 +4,57 @@
 @section('title', 'Dashboard')
 
 @section('content')
-<div class="pb-24 bg-white">
+<div class="pb-10 bg-white">
     {{-- Header --}}
-    <div class="bg-gradient-to-r from-green-500 to-green-600 p-6 text-white">
-        <div class="flex justify-between items-start">
-            <div>
-                <h1 class="text-2xl font-bold">Halo, {{ $cleaner->name }}</h1>
-                <p class="text-sm opacity-90 mt-1">Selamat bekerja hari ini</p>
-            </div>
-            <div class="flex items-center gap-3">
-                <span class="bg-white/20 px-3 py-1 rounded-full text-sm">
-                    <i class="fas fa-location-dot mr-1"></i> {{ $cleaner->radius_km }} km
-                </span>
-                @php $badge = $cleaner->status_badge; @endphp
-                <span class="{{ $badge[0] }} {{ $badge[1] }} px-3 py-1 rounded-full text-sm">
-                    <i class="fas fa-circle mr-1"></i> {{ $badge[2] }}
-                </span>
-            </div>
+    <div class="rounded-b-2xl p-6 text-white shadow-lg mx-auto"
+        style="background:#00bda2 ">
+        <div class="mb-3">
+            <h1 class="text-2xl font-bold mb-2">Halo, {{ $cleaner->name }}</h1>
+            <p>Selamat bekerja hari ini</p>
         </div>
+        
     </div>
+    {{-- Informasi Radius dan Status --}}
+            <div class="border-t border-gray-100 pt-6">
+                <div class="flex items-center justify-center gap-20">
+                    {{-- Radius --}}
+                    <div class="flex items-center gap-2">
+                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500">Radius</p>
+                            <p class="font-semibold text-gray-800">{{ $cleaner->radius_km ?? 5 }} km</p>
+                        </div>
+                    </div>
 
-    <div class="p-5">
-        {{-- Statistik Cards --}}
-        <div class="grid grid-cols-3 gap-3 mb-6">
-            <div class="bg-white rounded-xl border border-gray-200 p-3 text-center shadow-sm">
-                <span class="block text-2xl font-bold text-green-600">{{ $completedTasks ?? 0 }}+</span>
-                <span class="text-xs text-gray-500">Tugas Selesai</span>
-            </div>
-            <div class="bg-white rounded-xl border border-gray-200 p-3 text-center shadow-sm">
-                <span class="block text-2xl font-bold text-green-600">{{ $rating ?? 5.0 }}</span>
-                <span class="text-xs text-gray-500">Rating</span>
-            </div>
-            <div class="bg-white rounded-xl border border-gray-200 p-3 text-center shadow-sm">
-                <span class="block text-2xl font-bold text-green-600">{{ $satisfaction ?? 98 }}%</span>
-                <span class="text-xs text-gray-500">Kepuasan</span>
+                    {{-- Status --}}
+                    <div class="flex items-center gap-2">
+                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500">Status</p>
+                            <p class="font-semibold text-green-600">{{ ucfirst($cleaner->status ?? 'available') }}</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-
+    
+    <div class="p-5">
         {{-- Current Task Card (if any) --}}
+        <h1 class="font-bold mb-3 mt-3">Tugas Tersedia</h1>
         @if(isset($currentTask) && $currentTask)
-        <div class="bg-green-50 rounded-xl border border-green-200 p-5 mb-6">
+        <div class="bg-white rounded-xl border border-green-100 p-5 mb-6 shadow-lg">
             <div class="flex justify-between items-start mb-3">
                 <h2 class="font-semibold text-green-800">Tugas Aktif</h2>
-                <span class="bg-green-600 text-white text-xs px-2 py-1 rounded-full">{{ $currentTask->status_badge[2] }}</span>
+                <span class="bg-[#00bda2]  text-white text-xs px-2 py-1 rounded-full">{{ $currentTask->status_badge[2] }}</span>
             </div>
             <div class="flex items-center gap-3 mb-3">
                 <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
@@ -62,7 +70,7 @@
                 <span><i class="far fa-clock mr-1"></i> {{ $currentTask->formatted_time }}</span>
             </div>
             <a href="{{ route('cleaner.tasks.current') }}" 
-               class="block w-full bg-green-600 text-white text-center py-3 rounded-lg font-medium hover:bg-green-700 transition">
+               class="block w-full bg-[#00bda2] text-white text-center py-3 rounded-lg font-medium hover:bg-green-700 transition">
                 Lihat Detail
             </a>
         </div>

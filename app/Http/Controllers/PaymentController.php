@@ -107,11 +107,14 @@ class PaymentController extends Controller
                 'total' => $total,
                 'payment_method' => $paymentMethod,
                 'provider' => $provider,
-                'payment_status' => 'pending',
+                'payment_status' => 'paid',
+                'paid_at' => now(),
             ]);
 
             // Update status order
             $order->update(['status' => 'confirmed']);
+
+            
 
             DB::commit();
 
@@ -121,7 +124,7 @@ class PaymentController extends Controller
                 'payment_number' => $paymentNumber
             ]);
 
-            return redirect()->route('user.payments.show', $payment)
+            return redirect()->route('user.payments.processing', $order)
                 ->with('success', 'Silakan lakukan pembayaran');
 
         } catch (\Exception $e) {
@@ -132,6 +135,25 @@ class PaymentController extends Controller
             ]);
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
+    }
+
+     // ===== TAMBAHKAN METHOD INI =====
+    /**
+     * Show processing page after payment
+     */
+    public function processing(Order $order)
+    {
+        // Pastikan order milik user yang login
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        Log::info('Payment processing page accessed', [
+            'order_id' => $order->id,
+            'order_status' => $order->status
+        ]);
+
+        return view('user.payments.processing', compact('order'));
     }
 
     /**

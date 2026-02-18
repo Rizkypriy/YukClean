@@ -6,56 +6,75 @@
 @section('content')
 <div class="pb-24 bg-white">
     {{-- Header --}}
-    <div class="bg-gradient-to-r from-green-500 to-green-600 p-6 text-white">  {{-- PERBAIKAN: 'bg-linear-to-r' → 'bg-gradient-to-r' --}}
-        <div class="flex items-center justify-between">
+  <div class="rounded-b-2xl p-6 text-white shadow-lg mx-auto"
+        style="background:#00bda2 ">
+        <div class="flex mb-4">
             <h1 class="text-2xl font-bold">Profil Petugas</h1>
-            <a href="{{ route('cleaner.profile.edit') }}" class="bg-white/20 p-2 rounded-full hover:bg-white/30 transition">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                </svg>
-            </a>
         </div>
-    </div>
+        
+        <div class="bg-white text-black rounded-3xl shadow-lg p-6 border border-gray-100 min-w-[300px] max-w-[600px] mx-auto">
+                <div class="grid grid-cols-[auto,1fr] gap-4 items-center">
+                    {{-- Foto Profil --}}
+                    <div class="w-16 h-16 bg-gradient-to-br from-green-400 to-green-500 rounded-full flex items-center justify-center text-white text-2xl font-bold shrink-0">
+                        @if($cleaner->avatar)
+                            <img src="{{ asset('storage/'.$cleaner->avatar) }}" alt="Profile" class="w-full h-full rounded-full object-cover">
+                        @else
+                            {{-- Inisial dari nama --}}
+                            {{ substr($cleaner->name, 0, 1) }}{{ substr(strstr($cleaner->name, ' ', true) ?: $cleaner->name, 1, 1) ?? '' }}
+                        @endif
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold">{{ $cleaner->name }}</h1>
+                        <p>{{ $cleaner->gender }}</p>
+                        @php
+                            $rating = $cleaner->rating ?? 5.0;
+                            $fullStars = floor($rating);
+                            $halfStar = ($rating - $fullStars) >= 0.5;
+                            $emptyStars = 5 - $fullStars - ($halfStar ? 1 : 0);
+                        @endphp
 
-    <div class="px-5 -mt-12">
-        {{-- Profile Card --}}
-        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-            <div class="flex items-center gap-4">
-                <div class="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center text-white text-3xl font-bold shadow-md overflow-hidden">
-                    @if($cleaner->avatar)
-                        <img src="{{ Storage::url($cleaner->avatar) }}" alt="{{ $cleaner->name }}" class="w-full h-full object-cover">
-                    @else
-                        {{ $cleaner->initials }}
-                    @endif
-                </div>
-                <div class="flex-1">
-                    <h2 class="text-xl font-bold text-gray-800">{{ $cleaner->name }}</h2>
-                    <p class="text-sm text-gray-600">{{ $cleaner->gender }}</p>
-                    <div class="flex items-center mt-1">
-                        <span class="text-yellow-400 mr-1">⭐</span>
-                        <span class="font-medium">{{ number_format($cleaner->rating ?? 0, 1) }}</span>
+                        <div class="flex items-center gap-1">
+                            {{-- Bintang Penuh --}}
+                            @for($i = 1; $i <= $fullStars; $i++)
+                                <span class="text-yellow-400 text-lg">⭐</span>
+                            @endfor
+                            
+                            {{-- Setengah Bintang --}}
+                            @if($halfStar)
+                                <span class="text-yellow-400 text-lg relative">
+                                    <span class="absolute overflow-hidden w-1/2">⭐</span>
+                                    <span class="text-gray-300">☆</span>
+                                </span>
+                            @endif
+                            
+                            {{-- Bintang Kosong --}}
+                            @for($i = 1; $i <= $emptyStars; $i++)
+                                <span class="text-gray-300 text-lg">☆</span>
+                            @endfor
+                            
+                            <span class="text-sm text-gray-600 ml-1">({{ number_format($rating, 1) }})</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-
-            {{-- Stats --}}
-            <div class="grid grid-cols-3 gap-3 mt-6">
-                <div class="text-center">
-                    <span class="block text-2xl font-bold text-green-600">{{ $cleaner->total_tasks ?? 0 }}+</span>
-                    <span class="text-xs text-gray-500">Tugas Selesai</span>
+                
+                <div class="border-t border-gray-200 pt-3 mt-3">
+                    <div class="flex justify-between text-center text-sm">
+                        <div>
+                            <span class="text-2xl font-bold text-[#00bda2]">{{ $cleaner->total_tasks }}</span>
+                            <p class="text-sm">Tugas Selesai</p>
+                        </div>
+                        <div>
+                            <span class="text-2xl font-bold text-[#00bda2]">{{ $cleaner->rating }}</span>
+                            <p class="text-sm">Rating</p>
+                        </div>
+                        <div>
+                            <span class="text-2xl font-bold text-[#00bda2]">{{ $cleaner->satisfaction_rate }}</span>
+                            <p class="text-sm">Kepuasan</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="text-center">
-                    <span class="block text-2xl font-bold text-green-600">{{ number_format($cleaner->rating ?? 0, 1) }}</span>
-                    <span class="text-xs text-gray-500">Rating</span>
-                </div>
-                <div class="text-center">
-                    <span class="block text-2xl font-bold text-green-600">{{ $cleaner->satisfaction_rate ?? 0 }}%</span>
-                    <span class="text-xs text-gray-500">Kepuasan</span>
-                </div>
-            </div>
         </div>
     </div>
-
     {{-- Monthly Performance --}}
     <div class="px-5 mt-6">
         <h2 class="text-lg font-semibold text-gray-800 mb-3">Performa Bulan Ini</h2>

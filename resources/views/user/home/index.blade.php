@@ -8,8 +8,13 @@
     {{-- Header dengan Welcome --}}
     <div class="rounded-b-2xl p-5 text-white shadow-lg relative overflow-hidden"
         style="background: linear-gradient(135deg, #00bda2 0%, #00c85f 100%);">
+        {{-- Header dengan Logo dan Yuk Clean --}}
         <div class="flex items-center justify-between mb-6">
-            <h1 class="text-2xl font-bold">Yuk Clean</h1>
+            <div class="flex items-center gap-2">
+                {{-- Logo --}}
+                <img src="{{ asset('img/logo.png') }}" alt="Yuk Clean Logo" class="w-8 h-8">
+                <h1 class="text-xl font-bold">Yuk Clean</h1>
+            </div>
             <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
                 <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -20,7 +25,7 @@
 
         {{-- Welcome Message --}}
         <div class="mb-6">
-            <h2 class="text-xl font-semibold">Halo, Selamat Datang</h2>
+            <h2 class="text-xl font-semibold">Halo, Selamat Datang 👋</h2>
             <p class="text-sm opacity-90 mt-1">Pilih layanan kebersihan yang Anda butuhkan</p>
         </div>
 
@@ -40,7 +45,7 @@
     <div class="px-6 mt-6 space-y-4">
         @forelse($promos as $promo)
         <div class="rounded-2xl p-3 text-white shadow-lg relative overflow-hidden"
-            style="background: {{ $promo->background_color ?? 'linear-gradient(135deg, #be79ff 0%, #645fff 100%)' }};">
+            style="background: {{ $promo->background_color }};">
             {{-- Pattern/Texture --}}
             <div class="absolute top-0 right-0 w-28 h-28 bg-white opacity-10 rounded-full -mr-8 -mt-8"></div>
             <div class="absolute bottom-0 left-0 w-20 h-20 bg-white opacity-10 rounded-full -ml-6 -mb-6"></div>

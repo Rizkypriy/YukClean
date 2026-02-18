@@ -9,7 +9,7 @@ use App\Models\Promo;
 use App\Models\User;
 use App\Models\Payment;
 use App\Models\CleanerTask; // <-- TAMBAHKAN UNTUK INTEGRASI CLEANER
-use App\Http\Requests\OrderRequest;
+// use App\Http\Requests\OrderRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -71,17 +71,17 @@ class OrderController extends Controller
     /**
      * Store a newly created order.
      */
-    public function store(OrderRequest $request)
+    public function store(Request $request)
     {
         // 1. Standarisasi Format Waktu
         $startTime = Carbon::parse($request->start_time)->format('H:i:s');
         $endTime = Carbon::parse($request->end_time)->format('H:i:s');
         $orderDate = $request->booking_date ?? date('Y-m-d');
 
-        // Validasi jam
-        if ($startTime >= $endTime) {
-            return back()->with('error', 'Jam selesai harus setelah jam mulai.')->withInput();
-        }
+        // // Validasi jam
+        // if ($startTime >= $endTime) {
+        //     return back()->with('error', 'Jam selesai harus setelah jam mulai.')->withInput();
+        // }
 
         // 2. Cek Overlap Jam
         $existingOrder = Order::where('order_date', $orderDate)
@@ -163,6 +163,7 @@ class OrderController extends Controller
                 'order_date' => $orderDate,
                 'start_time' => $startTime,
                 'end_time' => $endTime,
+                'special_conditions' => $request->special_conditions,
                 'subtotal' => $subtotal,
                 'discount' => $discount,
                 'total' => $total,
@@ -193,11 +194,11 @@ class OrderController extends Controller
         $request->validate([
             'date' => 'required|date',
             'start_time' => 'required',
-            'end_time' => 'required'
+            // 'end_time' => 'required'
         ]);
 
         $startTime = Carbon::parse($request->start_time)->format('H:i:s');
-        $endTime = Carbon::parse($request->end_time)->format('H:i:s');
+        $endTime = Carbon::parse($request->start_time)->addHours(2)->format('H:i:s');
 
         $exists = Order::where('order_date', $request->date)
             ->whereIn('status', ['pending', 'confirmed', 'on_progress'])

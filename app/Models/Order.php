@@ -18,6 +18,7 @@ class Order extends Model
         'customer_name',
         'customer_phone',
         'address',
+        'special_conditions',
         'order_date',
         'start_time',
         'end_time',

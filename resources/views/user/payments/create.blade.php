@@ -4,38 +4,27 @@
 @section('title', 'Pembayaran')
 
 @section('content')
-<div class="min-h-screen bg-white pb-24">
+<div class="min-h-screen bg-gradient-to-br from-[#f0fdf5] to-[#d3fcf2]">
     {{-- Header --}}
-    <div class="bg-gradient-to-r from-green-500 to-green-600 p-6 text-white">  {{-- PERBAIKAN: dari 'bg-linear-to-r' ke 'bg-gradient-to-r' --}}
-        <a href="{{ route('user.orders.show', $order) }}" class="inline-flex items-center text-white mb-4">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-            Kembali
-        </a>
-        <h1 class="text-2xl font-bold">Pembayaran</h1>
+    <div class="bg-white shadow-lg px-7 py-6 mb-6">
+        <div class="flex items-center gap-3">
+            <div>
+                <a href="{{ route('user.orders.create',  $order->service_id) }}" class="inline-flex items-center text-black    ">
+                    <svg class="w-5 h-5 mr-2 " fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </a>
+            </div>
+            <div>
+                <h1 class="text-xl font-semibold text-black ">Pembayaran</h1>
+            </div>
+        </div>
     </div>
 
     <div class="p-5">
-        {{-- Ringkasan Pesanan --}}
-        <div class="bg-green-50 rounded-xl p-5 mb-6 border border-green-100">
-            <h2 class="font-semibold text-gray-700 mb-2">📋 Ringkasan Pesanan</h2>
-            <div class="flex items-center gap-3">
-                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                </div>
-                <div>
-                    <h3 class="font-semibold text-gray-800">{{ $order->service->name ?? $order->bundle->name }}</h3>
-                    <p class="text-sm text-gray-600">{{ $order->order_number }}</p>
-                </div>
-            </div>
-        </div>
-
         {{-- Ringkasan Pembayaran --}}
         <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm mb-6">
-            <h2 class="font-semibold text-gray-700 mb-4">💰 Ringkasan Pembayaran</h2>
+            <h2 class="font-semibold text-black mb-6">Ringkasan Pembayaran</h2>
             
             <div class="space-y-3">
                 <div class="flex justify-between text-sm">
@@ -56,9 +45,9 @@
                 @endif
                 
                 <div class="border-t border-gray-200 pt-3 mt-3">
-                    <div class="flex justify-between font-bold text-lg">
+                    <div class="flex justify-between font-bold text-sm">
                         <span>Total Pembayaran</span>
-                        <span class="text-green-600">Rp {{ number_format($total, 0, ',', '.') }}</span>
+                        <span class="text-[#009689]">Rp {{ number_format($total, 0, ',', '.') }}</span>
                     </div>
                 </div>
             </div>
@@ -81,18 +70,18 @@
                 <input type="hidden" name="payment_method" x-bind:value="selectedMethod">
                 <input type="hidden" name="provider" x-bind:value="selectedProvider">
 
-                <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-                    <h2 class="font-semibold text-gray-700 mb-4">💳 Pilih Metode Pembayaran</h2>
-                    
+                
+                <h2 class="font-semibold text-black ml-1 mb-4">Pilih Metode Pembayaran</h2>
+                    <div class="mb-20">
                     {{-- Daftar Metode Pembayaran --}}
                     <div class="space-y-3">
                         {{-- E-Wallet --}}
-                        <div class="border rounded-xl overflow-hidden">
+                        <div class="rounded-xl overflow-hidden mb-3 shadow-sm">
                             <button 
                                 type="button"
                                 @click="selectedMethod = selectedMethod === 'ewallet' ? null : 'ewallet'; selectedProvider = null"
                                 class="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition"
-                                :class="{ 'bg-green-50 border-green-500': selectedMethod === 'ewallet' }">
+                                :class="{ 'bg-white': selectedMethod === 'ewallet' }">
                                 <div class="flex items-center">
                                     <span class="text-2xl mr-3">📱</span>
                                     <span class="font-semibold text-gray-800">E-Wallet</span>
@@ -103,29 +92,27 @@
                             </button>
                             
                             {{-- Provider E-Wallet --}}
-                            <div x-show="selectedMethod === 'ewallet'" x-collapse class="p-4 border-t">
-                                <p class="text-sm text-gray-500 mb-3">Pilih E-Wallet:</p>
-                                <div class="grid grid-cols-2 gap-3">
-                                    <template x-for="provider in methods.ewallet.providers" :key="provider">
-                                        <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
-                                               :class="{ 'border-green-500 bg-green-50': selectedProvider === provider }">
-                                            <input type="radio" name="provider" :value="provider" x-model="selectedProvider" class="hidden">
-                                            <span class="flex items-center">
-                                                <span x-text="provider.charAt(0).toUpperCase() + provider.slice(1)" class="font-medium"></span>
-                                            </span>
-                                        </label>
-                                    </template>
-                                </div>
+                            <div x-show="selectedMethod === 'ewallet'" x-collapse class="p-4 border-t bg-white">
+                            <div class="">
+                                <template x-for="provider in methods.ewallet.providers" :key="provider">
+                                    <label class="flex items-center p-3 border rounded-lg cursor-pointer bg-[#f9fafb] hover:bg-[#f3f4f6] transition-colors duration-200 mb-2"
+                                        :class="{ 'border-[#00bba7] bg-[#f0fdfa]': selectedProvider === provider }">
+                                        <input type="radio" name="provider" :value="provider" x-model="selectedProvider" class="hidden">
+                                        <span class="flex items-center w-full justify-center">
+                                            <span x-text="provider.charAt(0).toUpperCase() + provider.slice(1)" class="font-medium text-gray-700"></span>
+                                        </span>
+                                    </label>
+                                </template>
                             </div>
                         </div>
 
                         {{-- Virtual Account --}}
-                        <div class="border rounded-xl overflow-hidden">
+                        <div class="border rounded-xl overflow-hidden mb-3 mt-3">
                             <button 
                                 type="button"
                                 @click="selectedMethod = selectedMethod === 'va' ? null : 'va'; selectedProvider = null"
                                 class="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition"
-                                :class="{ 'bg-green-50 border-green-500': selectedMethod === 'va' }">
+                                :class="{ 'bg-white': selectedMethod === 'va' }">
                                 <div class="flex items-center">
                                     <span class="text-2xl mr-3">🏦</span>
                                     <span class="font-semibold text-gray-800">Virtual Account</span>
@@ -136,12 +123,12 @@
                             </button>
                             
                             {{-- Provider Virtual Account --}}
-                            <div x-show="selectedMethod === 'va'" x-collapse class="p-4 border-t">
+                            <div x-show="selectedMethod === 'va'" x-collapse class="p-4 border-t bg-white">
                                 <p class="text-sm text-gray-500 mb-3">Pilih Bank:</p>
-                                <div class="grid grid-cols-2 gap-3">
+                                <div class="">
                                     <template x-for="provider in methods.va.providers" :key="provider">
-                                        <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
-                                               :class="{ 'border-green-500 bg-green-50': selectedProvider === provider }">
+                                        <label class="flex items-center p-3 border rounded-lg cursor-pointer bg-[#f9fafb] hover:bg-[#f3f4f6] transition-colors duration-200 mb-2"
+                                        :class="{ 'border-[#00bba7] bg-[#f0fdfa]': selectedProvider === provider }">
                                             <input type="radio" name="provider" :value="provider" x-model="selectedProvider" class="hidden">
                                             <span class="flex items-center">
                                                 <span x-text="provider.toUpperCase()" class="font-medium"></span>
@@ -153,12 +140,12 @@
                         </div>
 
                         {{-- QRIS --}}
-                        <div class="border rounded-xl overflow-hidden">
+                        <div class="border rounded-xl overflow-hidden mb-3">
                             <button 
                                 type="button"
                                 @click="selectedMethod = selectedMethod === 'qris' ? null : 'qris'; selectedProvider = 'qris'"
                                 class="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition"
-                                :class="{ 'bg-green-50 border-green-500': selectedMethod === 'qris' }">
+                                :class="{ 'bg-white': selectedMethod === 'qris' }">
                                 <div class="flex items-center">
                                     <span class="text-2xl mr-3">📲</span>
                                     <span class="font-semibold text-gray-800">QRIS</span>
@@ -169,7 +156,7 @@
                             </button>
                             
                             {{-- Konten QRIS --}}
-                            <div x-show="selectedMethod === 'qris'" x-collapse class="p-4 border-t">
+                            <div x-show="selectedMethod === 'qris'" x-collapse class="p-4 border-t bg-white">
                                 <div class="text-center p-4">
                                     <svg class="w-48 h-48 mx-auto mb-4 text-gray-700" fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M5 5h4v4H5zM15 5h4v4h-4zM5 15h4v4H5zM15 15h4v4h-4zM9 9h6v6H9z"/>
