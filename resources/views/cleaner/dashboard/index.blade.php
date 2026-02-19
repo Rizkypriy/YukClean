@@ -49,7 +49,7 @@
     
     <div class="p-5">
         {{-- Current Task Card (if any) --}}
-        <h1 class="font-bold mb-3 mt-3">Tugas Tersedia</h1>
+        <h2 class="text-lg font-semibold text-gray-800 mb-3">Tugas Tersedia</h2>
         @if(isset($currentTask) && $currentTask)
         <div class="bg-white rounded-xl border border-green-100 p-5 mb-6 shadow-lg">
             <div class="flex justify-between items-start mb-3">

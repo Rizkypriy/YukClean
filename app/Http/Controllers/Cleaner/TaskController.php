@@ -93,12 +93,14 @@ class TaskController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengambil tugas: ' . $e->getMessage()
-            ], 500);
-        }
+    DB::rollBack();
+    Log::error($e); // <- penting
+    return response()->json([
+        'success' => false,
+        'message' => $e->getMessage() // tampilkan error asli
+    ], 500);
+}
+
     }
 
     /**
@@ -122,61 +124,76 @@ class TaskController extends Controller
     /**
      * Update task status (on_the_way, in_progress, completed).
      */
-    public function updateStatus(Request $request, CleanerTask $task)
-    {
-        // Pastikan task milik cleaner yang sedang login
-        if ($task->cleaner_id !== Auth::guard('cleaner')->id()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Anda tidak memiliki akses ke tugas ini'
-            ], 403);
+  public function updateStatus(Request $request, $id)
+{
+    try {
+        $task = CleanerTask::findOrFail($id);
+
+        $task->status = $request->status;
+
+        // otomatis isi timestamp
+        if ($request->status === 'in_progress') {
+            $task->started_at = now();
         }
 
-        $request->validate([
-            'status' => 'required|in:on_the_way,in_progress,completed',
+        if ($request->status === 'completed') {
+            $task->completed_at = now();
+        }
+
+        $task->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Status updated'
         ]);
-
-        DB::beginTransaction();
-        try {
-            $data = ['status' => $request->status];
-            
-           // Catat waktu berdasarkan status
-        if ($request->status === 'on_the_way') {
-            $data['started_at'] = now();
-        } elseif ($request->status === 'in_progress') {
-            $data['started_at'] = now(); // Jika sebelumnya belum dicatat
-        } elseif ($request->status === 'completed') {
-            $data['completed_at'] = now();
-                
-                // Update order status
-                if ($task->order) {
-                    $task->order->update(['status' => 'completed']);
-                }
-                
-                // Update cleaner stats
-                $task->cleaner->increment('total_tasks');
-                $task->cleaner->update(['status' => 'available']);
-            }
-            
-            $task->update($data);
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Status berhasil diperbarui',
-                'status' => $task->status
-            ]);
-
-       } catch (\Exception $e) {
-        DB::rollBack();
-        Log::error('Update status error: ' . $e->getMessage());
+    } catch (\Exception $e) {
         return response()->json([
             'success' => false,
-            'message' => 'Gagal update status: ' . $e->getMessage()
+            'message' => $e->getMessage()
         ], 500);
     }
+}
+
+
+
+    /**
+ * Method tambahan untuk update progress saja
+ */
+public function updateProgress(Request $request, CleanerTask $task)
+{
+    if ($task->cleaner_id !== Auth::guard('cleaner')->id()) {
+        return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
     }
+
+    $request->validate([
+        'progress' => 'required|integer|min:0|max:100'
+    ]);
+
+    try {
+        $task->update([
+            'progress' => $request->progress,
+            'status' => 'in_progress' // Pastikan status in_progress
+        ]);
+        
+        // Update order progress juga
+        if ($task->order) {
+            $task->order->update(['progress' => $request->progress]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Progress diperbarui',
+            'progress' => $task->progress
+        ]);
+
+    } catch (\Exception $e) {
+        Log::error('Update progress error: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal update progress'
+        ], 500);
+    }
+}
 
     /**
      * Display task history (completed tasks).

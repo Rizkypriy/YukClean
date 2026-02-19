@@ -6,8 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Yuk Clean - Petugas @yield('title')</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    
+    {{-- VITE untuk CSS (ganti CDN Tailwind) --}}
+    @vite(['resources/css/app.css'])
+    
+    {{-- Font Awesome tetap via CDN --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
     <style>
         * {
             -webkit-font-smoothing: antialiased;
@@ -21,11 +26,19 @@
             scrollbar-width: none;
         }
         .nav-active {
-            @apply text-green-600 relative;
+            color: #059669;
+            position: relative;
         }
         .nav-active:after {
             content: '';
-            @apply absolute -bottom-3 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-green-600 rounded-full;
+            position: absolute;
+            bottom: -0.75rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0.25rem;
+            height: 0.25rem;
+            background-color: #059669;
+            border-radius: 9999px;
         }
         @keyframes slideIn {
             from {

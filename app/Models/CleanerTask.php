@@ -28,6 +28,7 @@ class CleanerTask extends Model
         'started_at',
         'completed_at',
         'notes',
+        'progress',
     ];
 
 
@@ -40,6 +41,8 @@ class CleanerTask extends Model
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
         'distance_km' => 'decimal:2',
+        'progress' => 'integer'
+        
     ];
 
     /**

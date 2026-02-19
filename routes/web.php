@@ -130,11 +130,15 @@ Route::prefix('cleaner')->name('cleaner.')->group(function () {
 
         // Tasks
         Route::prefix('tasks')->name('tasks.')->group(function () {
-            Route::get('/', [CleanerTaskController::class, 'index'])->name('index');
-            Route::get('/current', [CleanerTaskController::class, 'current'])->name('current');
-            Route::post('/{task}/accept', [CleanerTaskController::class, 'accept'])->name('accept');
-            Route::post('/{task}/status', [CleanerTaskController::class, 'updateStatus'])->name('update-status');
-            Route::get('/history', [CleanerTaskController::class, 'history'])->name('history');
+    Route::get('/', [CleanerTaskController::class, 'index'])->name('index');
+    Route::get('/current', [CleanerTaskController::class, 'current'])->name('current');
+    Route::post('/{task}/accept', [CleanerTaskController::class, 'accept'])->name('accept');
+    Route::post('/{task}/status', [CleanerTaskController::class, 'updateStatus'])->name('update-status');
+    Route::post('/{task}/progress', [CleanerTaskController::class, 'updateProgress'])->name('update-progress');
+    Route::get('/history', [CleanerTaskController::class, 'history'])->name('history');
+});
+
+            
         });
 
         // Profile
@@ -146,7 +150,6 @@ Route::prefix('cleaner')->name('cleaner.')->group(function () {
             Route::get('/statistics', [CleanerProfileController::class, 'statistics'])->name('statistics');
         });
     });
-});
 
 /*
 |--------------------------------------------------------------------------
