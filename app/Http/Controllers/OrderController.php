@@ -8,8 +8,7 @@ use App\Models\Bundle;
 use App\Models\Promo;
 use App\Models\User;
 use App\Models\Payment;
-use App\Models\CleanerTask; // <-- TAMBAHKAN UNTUK INTEGRASI CLEANER
-// use App\Http\Requests\OrderRequest;
+use App\Models\CleanerTask;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -31,13 +30,13 @@ class OrderController extends Controller
         /** @var User $user */
         $user = Auth::user();
         
-        $activeOrders = Order::with(['service', 'bundle'])
+        $activeOrders = Order::with(['service', 'bundle', 'cleanerTask'])
             ->where('user_id', $user->id)
-            ->whereIn('status', ['pending', 'confirmed', 'on_progress'])
+            ->whereIn('status', ['pending', 'confirmed', 'on_progress', 'on_the_way', 'in_progress', 'assigned'])
             ->orderBy('created_at', 'desc')
             ->get();
             
-        $historyOrders = Order::with(['service', 'bundle'])
+        $historyOrders = Order::with(['service', 'bundle', 'cleanerTask'])
             ->where('user_id', $user->id)
             ->whereIn('status', ['completed', 'cancelled'])
             ->orderBy('created_at', 'desc')
@@ -77,11 +76,6 @@ class OrderController extends Controller
         $startTime = Carbon::parse($request->start_time)->format('H:i:s');
         $endTime = Carbon::parse($request->end_time)->format('H:i:s');
         $orderDate = $request->booking_date ?? date('Y-m-d');
-
-        // // Validasi jam
-        // if ($startTime >= $endTime) {
-        //     return back()->with('error', 'Jam selesai harus setelah jam mulai.')->withInput();
-        // }
 
         // 2. Cek Overlap Jam
         $existingOrder = Order::where('order_date', $orderDate)
@@ -168,10 +162,23 @@ class OrderController extends Controller
                 'discount' => $discount,
                 'total' => $total,
                 'notes' => $request->notes,
-                'status' => 'pending', // Status awal pending
+                'status' => 'pending',
             ]);
 
-            // 7. Update total orders user
+            // 7. Buat Cleaner Task otomatis
+            CleanerTask::create([
+                'order_id'      => $order->id,
+                'service_name'  => $serviceName,
+                'customer_name' => $request->customer_name,
+                'customer_phone'=> $request->customer_phone,
+                'address'       => $request->address,
+                'task_date'     => $orderDate,
+                'start_time'    => $startTime,
+                'end_time'      => $endTime,
+                'status'        => 'available',
+            ]);
+
+            // 8. Update total orders user
             User::where('id', $user->id)->increment('total_orders');
 
             DB::commit();
@@ -194,7 +201,6 @@ class OrderController extends Controller
         $request->validate([
             'date' => 'required|date',
             'start_time' => 'required',
-            // 'end_time' => 'required'
         ]);
 
         $startTime = Carbon::parse($request->start_time)->format('H:i:s');
@@ -222,7 +228,7 @@ class OrderController extends Controller
         if ($order->user_id !== Auth::id()) {
             abort(403);
         }
-        $order->load(['service', 'bundle', 'promo']);
+        $order->load(['service', 'bundle', 'promo', 'cleaner', 'cleanerTask']);
         return view('user.orders.show', compact('order'));
     }
 
@@ -235,7 +241,7 @@ class OrderController extends Controller
             abort(403);
         }
 
-        if (!in_array($order->status, ['pending', 'confirmed'])) {
+        if (!in_array($order->status, ['pending', 'confirmed', 'assigned', 'on_the_way'])) {
             return back()->with('error', 'Pesanan tidak dapat dibatalkan karena statusnya ' . $order->status);
         }
 
@@ -261,14 +267,19 @@ class OrderController extends Controller
             ]);
 
             // Jika ada cleaner task yang terkait, batalkan juga
-            $cleanerTask = \App\Models\CleanerTask::where('order_id', $order->id)->first();
-            if ($cleanerTask && $cleanerTask->status === 'assigned') {
+            $cleanerTask = CleanerTask::where('order_id', $order->id)->first();
+            if ($cleanerTask && in_array($cleanerTask->status, ['assigned', 'on_the_way', 'in_progress'])) {
                 $cleanerTask->update(['status' => 'cancelled']);
+                
+                // Update status cleaner jika sedang on_task
+                if ($cleanerTask->cleaner) {
+                    $cleanerTask->cleaner->update(['status' => 'available']);
+                }
             }
 
             DB::commit();
 
-            return redirect()->route('user.orders.show', $order)
+            return redirect()->route('user.orders.index')
                 ->with('success', 'Pesanan berhasil dibatalkan.');
 
         } catch (\Exception $e) {
@@ -281,17 +292,22 @@ class OrderController extends Controller
     /**
      * Track order progress.
      */
-   public function track(Order $order)
-{
-    if ($order->user_id !== Auth::id()) {
-        abort(403);
+    public function track(Order $order)
+    {
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
+        
+        // Ambil data cleaner task jika ada
+        $cleanerTask = CleanerTask::where('order_id', $order->id)
+            ->with('cleaner')
+            ->first();
+        
+        // Load relasi lainnya
+        $order->load(['service', 'bundle', 'promo']);
+        
+        return view('user.orders.track', compact('order', 'cleanerTask'));
     }
-    
-    // Ambil data cleaner task jika ada
-    $cleanerTask = CleanerTask::where('order_id', $order->id)->with('cleaner')->first();
-    
-    return view('user.orders.track', compact('order', 'cleanerTask'));
-}
 
     /**
      * Mark order as completed (after payment confirmation).
@@ -392,5 +408,95 @@ class OrderController extends Controller
             ],
             'total' => $request->subtotal - $discount
         ]);
+    }
+
+    /**
+     * Handle rating from user.
+     */
+    public function rate(Request $request, Order $order)
+{
+    if ($order->user_id !== Auth::id()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Unauthorized'
+        ], 403);
+    }
+
+    $request->validate([
+        'rating' => 'required|integer|min:1|max:5'
+    ]);
+
+    try {
+        // Simpan rating ke order
+        $order->update([
+            'rating' => $request->rating
+        ]);
+
+        // Jika ada cleaner, update rating cleaner
+        if ($order->cleaner_id) {
+            $cleaner = $order->cleaner;
+            if ($cleaner) {
+                // Hitung rata-rata rating baru untuk cleaner
+                $averageRating = Order::where('cleaner_id', $order->cleaner_id)
+                    ->whereNotNull('rating')
+                    ->avg('rating');
+                
+                $cleaner->update([
+                    'rating' => round($averageRating, 1)
+                ]);
+
+                // 🔥 TAMBAHKAN: Update satisfaction rate
+                $totalRatings = Order::where('cleaner_id', $order->cleaner_id)
+                    ->whereNotNull('rating')
+                    ->count();
+                
+                $goodRatings = Order::where('cleaner_id', $order->cleaner_id)
+                    ->where('rating', '>=', 4)
+                    ->whereNotNull('rating')
+                    ->count();
+                
+                $satisfactionRate = $totalRatings > 0 
+                    ? round(($goodRatings / $totalRatings) * 100) 
+                    : 100;
+                
+                $cleaner->update([
+                    'satisfaction_rate' => $satisfactionRate
+                ]);
+                // 🔥 SELESAI TAMBAHAN
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Terima kasih atas ratingnya!'
+        ]);
+
+    } catch (\Exception $e) {
+        Log::error('Rating Error: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal menyimpan rating'
+        ], 500);
+    }
+}
+
+    /**
+     * Update notes for order
+     */
+    public function updateNotes(Request $request, Order $order)
+    {
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'notes' => 'nullable|string|max:500'
+        ]);
+
+        $order->update([
+            'notes' => $request->notes
+        ]);
+
+        return back()->with('success', 'Catatan berhasil diperbarui');
     }
 }

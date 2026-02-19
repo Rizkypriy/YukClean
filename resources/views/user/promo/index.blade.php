@@ -3,7 +3,7 @@
 @section('title', 'Promo')
 
 @section('content')
-<div class="pb-24 bg-white">
+<div class="pb-24 bg-[#e8fdf3;]">
     {{-- Header dengan gradient --}}
     <div class="rounded-b-2xl p-5 text-white shadow-lg relative overflow-hidden"
          style="background: linear-gradient(135deg, #00bda2 0%, #00c85f 100%);">

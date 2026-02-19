@@ -126,18 +126,50 @@ class TaskController extends Controller
      */
   public function updateStatus(Request $request, $id)
 {
+    $request->validate([
+        'status' => 'required|in:on_the_way,in_progress,completed'
+    ]);
+
+    $cleanerId = Auth::guard('cleaner')->id();
+
     try {
-        $task = CleanerTask::findOrFail($id);
+        $task = CleanerTask::with('order')->findOrFail($id);
+
+        if ($task->cleaner_id !== $cleanerId) {
+            return response()->json(['success'=>false,'message'=>'Unauthorized'],403);
+        }
 
         $task->status = $request->status;
 
-        // otomatis isi timestamp
-        if ($request->status === 'in_progress') {
-            $task->started_at = now();
+        // 🔄 MENUJU LOKASI
+        if ($request->status === 'on_the_way') {
+            optional($task->order)->update([
+                'status' => 'on_progress'
+            ]);
         }
 
+        // 🧹 MULAI MEMBERSIHKAN
+        if ($request->status === 'in_progress') {
+            $task->started_at = now();
+
+            optional($task->order)->update([
+                'status' => 'on_progress'
+            ]);
+        }
+
+        // ✅ SELESAI
         if ($request->status === 'completed') {
             $task->completed_at = now();
+
+            optional($task->order)->update([
+                'status' => 'completed',
+                'progress' => 100
+            ]);
+
+            // reset status cleaner
+            Auth::guard('cleaner')->user()->update([
+                'status' => 'available'
+            ]);
         }
 
         $task->save();
@@ -146,13 +178,18 @@ class TaskController extends Controller
             'success' => true,
             'message' => 'Status updated'
         ]);
+
     } catch (\Exception $e) {
+        Log::error('Update status error: '.$e->getMessage());
+
         return response()->json([
             'success' => false,
-            'message' => $e->getMessage()
+            'message' => 'Server error'
         ], 500);
     }
 }
+
+
 
 
 

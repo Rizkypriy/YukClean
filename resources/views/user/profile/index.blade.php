@@ -4,7 +4,7 @@
 @section('title', 'Profil Saya')
 
 @section('content')
-<div class="pb-24 bg-white">
+<div class="pb-24 bg-[#e8fdf3;]">
     {{-- Header dengan background gradient --}}
     <div class="rounded-b-2xl p-6 text-white shadow-lg relative overflow-hidden"
          style="background: linear-gradient(135deg, #00bda2 0%, #00c85f 100%);">
@@ -30,13 +30,13 @@
             {{-- Bagian Atas: Avatar dan Info --}}
             <div class="flex items-center gap-4 mb-4">
                 {{-- Avatar --}}
-                <div class="w-20 h-20 bg-linear-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center text-white text-3xl font-bold shadow-md overflow-hidden">
-                    @if($user->avatar)
-                        <img src="{{ Storage::url($user->avatar) }}" alt="{{ $user->name }}" class="w-full h-full object-cover">
-                    @else
-                        {{ $user->initials }}
-                    @endif
-                </div>
+                <div class="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center text-white text-3xl font-bold shadow-md overflow-hidden">
+    @if($user->avatar)
+        <img src="{{ Storage::url($user->avatar) }}" alt="{{ $user->name }}" class="w-full h-full object-cover">
+    @else
+        {{ $user->initials }}
+    @endif
+</div>
                 
                 {{-- User Info --}}
                 <div class="flex-1">
@@ -256,7 +256,7 @@
         {{-- Tombol Keluar --}}
         <form method="POST" action="{{ route('user.logout') }}" onsubmit="return confirm('Apakah Anda yakin ingin keluar?');">
             @csrf
-            <button type="submit" class="w-full bg-red-50 text-red-600 py-3.5 rounded-xl font-medium hover:bg-red-100 transition border border-red-100 mt-6">
+            <button type="submit" class="w-full bg-white text-red-600 py-3.5 rounded-xl font-medium hover:bg-red-100 transition border border-red-500 mt-6">
                 Keluar
             </button>
         </form>

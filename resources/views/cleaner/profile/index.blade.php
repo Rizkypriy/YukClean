@@ -77,12 +77,11 @@
     </div>
     {{-- Monthly Performance --}}
     <div class="px-5 mt-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-3">Performa Bulan Ini</h2>
-        
-        <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-            <div class="space-y-4">
+        <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-lg">
+            <h2 class="text-lg font-semibold text-gray-800 mb-3 ">Performa Bulan Ini</h2>
+            <div class="space-y-4 border-t">
                 {{-- Tugas Selesai --}}
-                <div>
+                <div class="mt-2">
                     <div class="flex justify-between items-center mb-1">
                         <span class="text-sm text-gray-600">Tugas Selesai</span>
                         <span class="font-semibold">{{ $monthlyCompleted ?? 0 }} tugas</span>
@@ -130,29 +129,32 @@
 
     {{-- Recent Activities --}}
     <div class="px-5 mt-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-3">Aktivitas Terakhir</h2>
         
         <div class="space-y-3">
+            
             @forelse($recentTasks ?? [] as $task)
-            <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                        <span class="text-green-600 font-bold">{{ $cleaner->initials }}</span>
+            <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-lg">
+                <h2 class="text-lg font-semibold text-gray-800 mb-3">Aktivitas Terakhir</h2>
+                    <div class="border-t mb-4">
                     </div>
-                    <div class="flex-1">
-                        <h4 class="font-medium text-gray-800">{{ $task->customer_name ?? 'Pelanggan' }}</h4>
-                        <p class="text-xs text-gray-500">{{ $task->service_type ?? 'Layanan' }}</p>
-                        <p class="text-xs text-gray-400">
-                            @if(isset($task->completed_at))
-                                {{ \Carbon\Carbon::parse($task->completed_at)->format('d M Y') }}
-                            @else
-                                {{ isset($task->task_date) ? \Carbon\Carbon::parse($task->task_date)->format('d M Y') : 'Tanggal tidak tersedia' }}
-                            @endif
-                        </p>
-                    </div>
-                    <span class="text-green-600 text-sm"><i class="fas fa-check-circle"></i></span>
+                        <div class="flex items-center gap-3 ">
+                            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                <span class="text-green-600 font-bold">{{ $cleaner->initials }}</span>
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="font-medium text-gray-800">{{ $task->customer_name ?? 'Pelanggan' }}</h4>
+                                <p class="text-xs text-gray-500">{{ $task->service_type ?? 'Layanan' }}</p>
+                                <p class="text-xs text-gray-400">
+                                    @if(isset($task->completed_at))
+                                        {{ \Carbon\Carbon::parse($task->completed_at)->format('d M Y') }}
+                                    @else
+                                        {{ isset($task->task_date) ? \Carbon\Carbon::parse($task->task_date)->format('d M Y') : 'Tanggal tidak tersedia' }}
+                                    @endif
+                                </p>
+                            </div>
+                            <span class="text-green-600 text-sm"><i class="fas fa-check-circle"></i></span>
+                        </div>
                 </div>
-            </div>
             @empty
             <p class="text-center text-gray-500 py-4">Belum ada aktivitas</p>
             @endforelse
@@ -161,9 +163,16 @@
 
     {{-- Logout Button --}}
     <div class="px-5 mt-8 mb-24">
+        <a href="{{ route('cleaner.profile.edit') }}" 
+           class="w-full text-gray-500 border border-gray-500 py-3.5 rounded-xl font-medium hover:text-[#00bda2] hover:border-[#00bda2] transition flex items-center justify-center gap-2 mb-4 shadow-lg">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+            Edit Profil
+        </a>
         <form method="POST" action="{{ route('cleaner.logout') }}" onsubmit="return confirm('Apakah Anda yakin ingin keluar?');">
             @csrf
-            <button type="submit" class="w-full bg-red-50 text-red-600 py-3.5 rounded-xl font-medium hover:bg-red-100 transition border border-red-100">
+            <button type="submit" class="w-full text-red-600 py-3.5 rounded-xl font-medium hover:bg-red-100 transition border border-red-300 shadow-lg">
                 Keluar
             </button>
         </form>

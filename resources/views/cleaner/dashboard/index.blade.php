@@ -49,11 +49,12 @@
     
     <div class="p-5">
         {{-- Current Task Card (if any) --}}
-        <h2 class="text-lg font-semibold text-gray-800 mb-3">Tugas Tersedia</h2>
+        
         @if(isset($currentTask) && $currentTask)
+        <h2 class="text-lg font-semibold text-gray-800 mb-3">Tugas Aktif</h2>
         <div class="bg-white rounded-xl border border-green-100 p-5 mb-6 shadow-lg">
             <div class="flex justify-between items-start mb-3">
-                <h2 class="font-semibold text-green-800">Tugas Aktif</h2>
+                <h2 class="font-semibold text-green-800"></h2>
                 <span class="bg-[#00bda2]  text-white text-xs px-2 py-1 rounded-full">{{ $currentTask->status_badge[2] }}</span>
             </div>
             <div class="flex items-center gap-3 mb-3">
@@ -70,7 +71,7 @@
                 <span><i class="far fa-clock mr-1"></i> {{ $currentTask->formatted_time }}</span>
             </div>
             <a href="{{ route('cleaner.tasks.current') }}" 
-               class="block w-full bg-[#00bda2] text-white text-center py-3 rounded-lg font-medium hover:bg-green-700 transition">
+               class="block w-full bg-[#00bda2] text-white text-center py-3 rounded-lg font-medium hover:opacity-80 shadow-lg transition">
                 Lihat Detail
             </a>
         </div>
@@ -146,7 +147,7 @@
         </div>
 
         {{-- Recent Activities --}}
-        <div>
+        <div class="pb-24">
             <h2 class="text-lg font-semibold text-gray-800 mb-3">Aktivitas Terakhir</h2>
             
             @forelse($recentTasks as $task)
@@ -164,7 +165,7 @@
                 </div>
             </div>
             @empty
-            <p class="text-center text-gray-500 py-4">Belum ada aktivitas</p>
+            <p class="text-center text-gray-500 py-4 mb-">Belum ada aktivitas</p>
             @endforelse
         </div>
     </div>

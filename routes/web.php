@@ -72,6 +72,9 @@ Route::prefix('user')->name('user.')->group(function () {
             Route::post('/{order}/cancel', [OrderController::class, 'cancel'])->name('cancel');
             Route::post('/check-promo', [OrderController::class, 'checkPromo'])->name('check-promo');
             Route::post('/check-availability', [OrderController::class, 'checkAvailability'])->name('check-availability');
+            Route::get('/completed/{order}', [OrderController::class, 'completed'])->name('completed');
+    Route::post('/{order}/rate', [OrderController::class, 'rate'])->name('rate');
+    Route::put('/{order}/update-notes', [OrderController::class, 'updateNotes'])->name('update-notes');
         });
         
         // Profile
@@ -103,13 +106,14 @@ Route::prefix('user')->name('user.')->group(function () {
     });
 });
 
+
 /*
 |--------------------------------------------------------------------------
 | CLEANER ROUTES
 |--------------------------------------------------------------------------
 */
 Route::prefix('cleaner')->name('cleaner.')->group(function () {
-    
+
     // ===== GUEST ROUTES (CLEANER) =====
     Route::middleware('guest:cleaner')->group(function () {
         Route::get('/login', [CleanerAuthController::class, 'showLoginForm'])->name('login');
@@ -120,9 +124,10 @@ Route::prefix('cleaner')->name('cleaner.')->group(function () {
 
     // ===== PROTECTED ROUTES (CLEANER) =====
     Route::middleware('cleaner')->group(function () {
+
         // Logout
         Route::post('/logout', [CleanerAuthController::class, 'logout'])->name('logout');
-        
+
         // Dashboard
         Route::get('/dashboard', [CleanerDashboardController::class, 'index'])->name('dashboard');
         Route::post('/location', [CleanerDashboardController::class, 'updateLocation'])->name('location');
@@ -130,15 +135,12 @@ Route::prefix('cleaner')->name('cleaner.')->group(function () {
 
         // Tasks
         Route::prefix('tasks')->name('tasks.')->group(function () {
-    Route::get('/', [CleanerTaskController::class, 'index'])->name('index');
-    Route::get('/current', [CleanerTaskController::class, 'current'])->name('current');
-    Route::post('/{task}/accept', [CleanerTaskController::class, 'accept'])->name('accept');
-    Route::post('/{task}/status', [CleanerTaskController::class, 'updateStatus'])->name('update-status');
-    Route::post('/{task}/progress', [CleanerTaskController::class, 'updateProgress'])->name('update-progress');
-    Route::get('/history', [CleanerTaskController::class, 'history'])->name('history');
-});
-
-            
+            Route::get('/', [CleanerTaskController::class, 'index'])->name('index');
+            Route::get('/current', [CleanerTaskController::class, 'current'])->name('current');
+            Route::post('/{task}/accept', [CleanerTaskController::class, 'accept'])->name('accept');
+            Route::post('/{task}/status', [CleanerTaskController::class, 'updateStatus'])->name('update-status');
+            Route::post('/{task}/progress', [CleanerTaskController::class, 'updateProgress'])->name('update-progress');
+            Route::get('/history', [CleanerTaskController::class, 'history'])->name('history');
         });
 
         // Profile
@@ -149,7 +151,20 @@ Route::prefix('cleaner')->name('cleaner.')->group(function () {
             Route::put('/password', [CleanerProfileController::class, 'updatePassword'])->name('password');
             Route::get('/statistics', [CleanerProfileController::class, 'statistics'])->name('statistics');
         });
+
     });
+});
+
+
+        // Profile
+        Route::prefix('profile')->name('profile.')->group(function () {
+            Route::get('/', [CleanerProfileController::class, 'index'])->name('index');
+            Route::get('/edit', [CleanerProfileController::class, 'edit'])->name('edit');
+            Route::put('/', [CleanerProfileController::class, 'update'])->name('update');
+            Route::put('/password', [CleanerProfileController::class, 'updatePassword'])->name('password');
+            Route::get('/statistics', [CleanerProfileController::class, 'statistics'])->name('statistics');
+        });
+    
 
 /*
 |--------------------------------------------------------------------------

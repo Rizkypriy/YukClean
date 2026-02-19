@@ -4,7 +4,7 @@
 @section('title', 'Pesanan Saya')
 
 @section('content')
-<div class="pb-24" style="background-color: #e8fdf3;">
+<div class="min-h-screen" style="background-color: #e8fdf3;">
     {{-- Header dengan background gradient --}}
     <div class="rounded-b-2xl p-6 text-white shadow-lg relative overflow-hidden"
          style="background: linear-gradient(135deg, #00bda2 0%, #00c85f 100%);">
@@ -99,24 +99,19 @@
 
                     {{-- Harga dan Tombol Aksi --}}
                     <div class="flex items-center justify-between pt-3 border-t border-gray-100">
-                        <span class="text-xl font-bold text-green-600">Rp {{ number_format($order->total, 0, ',', '.') }}</span>
+                        <span class="text-sm font-bold text-[#12968a]">Rp {{ number_format($order->total, 0, ',', '.') }}</span>
                         
                         <div class="flex gap-2">
                             {{-- Tombol Hubungi --}}
                             <a href="tel:{{ $order->customer_phone }}" 
-                               class="flex items-center gap-1 border border-blue-500 text-blue-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                                </svg>
+                               class="flex items-center gap-1 text center border border-[#00bda2] text-[#00bda2] px-3 py-2 rounded-xl text-xs font-medium hover:text-[black] transition" >
                                 Hubungi
                             </a>
 
                             {{-- Tombol Lacak --}}
                             <a href="{{ route('user.orders.track', $order) }}" 
-                            class="flex items-center gap-1 border border-green-600 text-green-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-50 transition">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                                </svg>
+                             class="flex items-center text-center gap-1 text-white px-3 py-2 rounded-xl text-xs font-medium hover:opacity-80 transition" 
+                                style="background: linear-gradient(135deg, #00bda2 0%, #00c85f 100%);">
                                 Lacak Pesanan
                             </a>
 
@@ -145,7 +140,7 @@
             {{-- Konten Tab Riwayat --}}
             <div x-show="activeTab === 'riwayat'" x-transition class="p-4 space-y-4">
                 @forelse($historyOrders as $order)
-                <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm opacity-75">
+                <div class="bg-white rounded-xl border border-gray-200 p-2  shadow-sm opacity-75">
                     {{-- Header Order --}}
                     <div class="flex justify-between items-center mb-3">
                         <span class="text-sm font-medium text-gray-500">{{ $order->order_number }}</span>
@@ -201,26 +196,26 @@
                     </div>
 
                     {{-- Harga dan Tombol Aksi --}}
-                    <div class="flex items-center justify-between pt-3 border-t border-gray-100">
-                        <span class="text-xl font-bold text-green-600">Rp {{ number_format($order->total, 0, ',', '.') }}</span>
+                    <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+                        <span class="text-sm font-bold text-[#12968a]">Rp {{ number_format($order->total, 0, ',', '.') }}</span>
                         
                         <div class="flex gap-2">
-                            @if($order->status === 'completed')
+                            <a href="{{ route('user.dashboard', $order) }}" 
+                                   class="border border-[#12968a] text-[#12968a] px-4 py-2 rounded-lg text-sm font-medium hover: opacity-80 transition">
+                                    Pesan Lagi
+                                </a>
+                                @if($order->status === 'completed')
                                 {{-- PERBAIKAN: Tambahkan prefix user. --}}
                                 <a href="{{ route('user.orders.completed', $order) }}" 
-                                   class="border border-green-600 text-green-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-50 transition">
-                                    Lihat Ucapan Terima Kasih
+                                   class="border border-gray-500 text-gray-500 px-2 py-2 rounded-lg text-sm font-medium hover: opacity-80 transition">
+                                    Ulasan  
                                 </a>
                             @else
                                 <a href="{{ route('user.orders.show', $order) }}" 
-                                   class="border border-green-600 text-green-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-50 transition">
+                                   class="flex items-center gap-1 text center border border-[#00bda2] text-[#00bda2] px-3 py-2 rounded-xl text-xs font-medium hover:text-[black] transition">
                                     Detail
                                 </a>
                             @endif
-                            
-                            <button class="border border-blue-500 text-blue-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition">
-                                Pesan Lagi
-                            </button>
                         </div>
                     </div>
                 </div>

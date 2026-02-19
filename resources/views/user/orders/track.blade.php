@@ -6,8 +6,8 @@
 @section('content')
 <div class="min-h-screen bg-white pb-24">
     {{-- Header --}}
-    <div class="bg-gradient-to-r from-green-500 to-green-600 p-6 text-white">
-        <a href="{{ route('user.orders.show', $order) }}" class="inline-flex items-center text-white mb-4">
+    <div class="rounded-b-2xl p-5 text-white shadow-lg relative overflow-hidden" style="background: linear-gradient(135deg, #00bda2 0%, #00c85f 100%);">
+        <a href="{{ route('user.orders.index', $order) }}" class="inline-flex items-center text-white mb-4">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
