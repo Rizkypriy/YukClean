@@ -25,7 +25,7 @@
         {{-- Main Content --}}
         <div class="flex-1 flex flex-col overflow-hidden">
             {{-- Navbar --}}
-            {{-- @include('admin.layouts.navbar') --}}
+            @include('admin.layouts.navbar')
             
             {{-- Content --}}
             <main class="flex-1 overflow-y-auto p-6">

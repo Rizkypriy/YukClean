@@ -75,11 +75,11 @@ class Order extends Model
     public function getStatusBadgeAttribute()
     {
         return match($this->status) {
-            'pending'      => ['bg-yellow-100', 'text-yellow-600', 'Menunggu'],
-            'confirmed'    => ['bg-blue-100', 'text-blue-600', 'Dikonfirmasi'],
-            'on_progress'  => ['bg-green-100', 'text-green-600', 'Diproses'],
-            'completed'    => ['bg-gray-100', 'text-gray-600', 'Selesai'],
-            'cancelled'    => ['bg-red-100', 'text-red-600', 'Dibatalkan'],
+            'pending'      => ['bg-yellow-100', 'text-yellow-600', 'pending'],
+            'confirmed'    => ['bg-blue-100', 'text-blue-600', 'confirmed'],
+            'on_progress'  => ['bg-green-100', 'text-green-600', 'on_progress'],
+            'completed'    => ['bg-gray-100', 'text-gray-600', 'completed'],
+            'cancelled'    => ['bg-red-100', 'text-red-600', 'cancelled'],
             default        => ['bg-gray-100', 'text-gray-600', $this->status],
         };
     }

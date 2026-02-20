@@ -44,7 +44,7 @@
         </button>
 
         <p class="text-center mt-4">
-            <a href="{{ route('home') }}" class="text-sm text-purple-600 hover:underline">
+            <a href="{{ route('login.landing') }}" class="text-sm text-purple-600 hover:underline">
                 ← Kembali ke pilihan role
             </a>
         </p>

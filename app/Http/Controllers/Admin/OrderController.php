@@ -81,4 +81,50 @@ class OrderController extends Controller
     {
         // Export orders ke CSV/Excel
     }
+
+     /**
+     * Display monitoring page.
+     */
+    public function monitoring(Request $request)
+    {
+        // Statistik status
+        $statusStats = [
+            'waiting' => Order::where('status', 'pending')->count(),
+            'in_progress' => Order::whereIn('status', ['on_progress', 'in_progress'])->count(),
+            'completed' => Order::where('status', 'completed')->count(),
+            'cancelled' => Order::where('status', 'cancelled')->count(),
+        ];
+
+        $totalOrders = array_sum($statusStats);
+
+        // Persentase untuk chart
+        $percentages = [
+            'waiting' => $totalOrders > 0 ? round(($statusStats['waiting'] / $totalOrders) * 100, 1) : 0,
+            'in_progress' => $totalOrders > 0 ? round(($statusStats['in_progress'] / $totalOrders) * 100, 1) : 0,
+            'completed' => $totalOrders > 0 ? round(($statusStats['completed'] / $totalOrders) * 100, 1) : 0,
+            'cancelled' => $totalOrders > 0 ? round(($statusStats['cancelled'] / $totalOrders) * 100, 1) : 0,
+        ];
+
+        // Pekerjaan aktif (sedang berjalan)
+        $activeJobs = Order::with(['user', 'cleaner', 'service'])
+            ->whereIn('status', ['on_progress', 'in_progress'])
+            ->latest()
+            ->take(5)
+            ->get();
+
+        // Riwayat pekerjaan selesai
+        $completedJobs = Order::with(['user', 'cleaner', 'service'])
+            ->where('status', 'completed')
+            ->latest()
+            ->paginate(10);
+
+        return view('admin.orders.monitoring', compact(
+            'statusStats',
+            'totalOrders',
+            'percentages',
+            'activeJobs',
+            'completedJobs'
+        ));
+    }
+
 }

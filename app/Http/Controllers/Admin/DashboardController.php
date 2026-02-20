@@ -173,4 +173,10 @@ class DashboardController extends Controller
             'data' => $data
         ];
     }
+
+    public function orders()
+{
+    $orders = Order::with(['user', 'cleaner', 'service'])->latest()->paginate(15);
+    return view('admin.orders.index', compact('orders'));
+}
 }

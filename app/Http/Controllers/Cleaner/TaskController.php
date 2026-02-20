@@ -206,7 +206,11 @@ public function updateProgress(Request $request, CleanerTask $task)
         'progress' => 'required|integer|min:0|max:100'
     ]);
 
+    // 🔥 TAMBAHKAN: Mulai transaksi database
+    DB::beginTransaction();
+    
     try {
+        // Update task
         $task->update([
             'progress' => $request->progress,
             'status' => 'in_progress' // Pastikan status in_progress
@@ -214,8 +218,22 @@ public function updateProgress(Request $request, CleanerTask $task)
         
         // Update order progress juga
         if ($task->order) {
-            $task->order->update(['progress' => $request->progress]);
+            $task->order->update([
+                'progress' => $request->progress
+                // 🔥 TAMBAHKAN: Update status order jika perlu
+                // 'status' => 'in_progress' // Opsional
+            ]);
+            
+            // 🔥 TAMBAHKAN: Log untuk debugging
+            \Log::info('Progress updated', [
+                'task_id' => $task->id,
+                'order_id' => $task->order->id,
+                'progress' => $request->progress
+            ]);
         }
+
+        // 🔥 TAMBAHKAN: Commit transaksi
+        DB::commit();
 
         return response()->json([
             'success' => true,
@@ -224,6 +242,9 @@ public function updateProgress(Request $request, CleanerTask $task)
         ]);
 
     } catch (\Exception $e) {
+        // 🔥 TAMBAHKAN: Rollback jika error
+        DB::rollBack();
+        
         Log::error('Update progress error: ' . $e->getMessage());
         return response()->json([
             'success' => false,

@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HomeController;
-use App\Http\Controllers\OrderController;
+// use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PromoController;
 use App\Http\Controllers\BundleController;
@@ -13,7 +13,12 @@ use App\Http\Controllers\Cleaner\TaskController as CleanerTaskController;
 use App\Http\Controllers\Cleaner\ProfileController as CleanerProfileController;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\ServiceController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\CleanerController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,12 +29,10 @@ Route::get('/', function() {
     return view('auth.landing');
 })->name('login.landing');
 
-// Tambahkan ini di bawah landing page
 Route::get('/login', function() {
     return redirect()->route('user.login');
 })->name('login');
 
-// Route logout manual
 Route::post('/logout', function () {
     Auth::logout();
     request()->session()->invalidate();
@@ -54,10 +57,8 @@ Route::prefix('user')->name('user.')->group(function () {
 
     // ===== PROTECTED ROUTES (USER) =====
     Route::middleware('auth')->group(function () {
-        // Logout
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
         
-        // Dashboard
         Route::get('/dashboard', [HomeController::class, 'index'])->name('dashboard');
         Route::get('/search', [HomeController::class, 'search'])->name('search');
         
@@ -73,8 +74,9 @@ Route::prefix('user')->name('user.')->group(function () {
             Route::post('/check-promo', [OrderController::class, 'checkPromo'])->name('check-promo');
             Route::post('/check-availability', [OrderController::class, 'checkAvailability'])->name('check-availability');
             Route::get('/completed/{order}', [OrderController::class, 'completed'])->name('completed');
-    Route::post('/{order}/rate', [OrderController::class, 'rate'])->name('rate');
-    Route::put('/{order}/update-notes', [OrderController::class, 'updateNotes'])->name('update-notes');
+            Route::post('/{order}/rate', [OrderController::class, 'rate'])->name('rate');
+            Route::put('/{order}/update-notes', [OrderController::class, 'updateNotes'])->name('update-notes');
+            
         });
         
         // Profile
@@ -106,7 +108,6 @@ Route::prefix('user')->name('user.')->group(function () {
     });
 });
 
-
 /*
 |--------------------------------------------------------------------------
 | CLEANER ROUTES
@@ -124,11 +125,8 @@ Route::prefix('cleaner')->name('cleaner.')->group(function () {
 
     // ===== PROTECTED ROUTES (CLEANER) =====
     Route::middleware('cleaner')->group(function () {
-
-        // Logout
         Route::post('/logout', [CleanerAuthController::class, 'logout'])->name('logout');
 
-        // Dashboard
         Route::get('/dashboard', [CleanerDashboardController::class, 'index'])->name('dashboard');
         Route::post('/location', [CleanerDashboardController::class, 'updateLocation'])->name('location');
         Route::post('/status', [CleanerDashboardController::class, 'updateStatus'])->name('status');
@@ -151,20 +149,8 @@ Route::prefix('cleaner')->name('cleaner.')->group(function () {
             Route::put('/password', [CleanerProfileController::class, 'updatePassword'])->name('password');
             Route::get('/statistics', [CleanerProfileController::class, 'statistics'])->name('statistics');
         });
-
     });
 });
-
-
-        // Profile
-        Route::prefix('profile')->name('profile.')->group(function () {
-            Route::get('/', [CleanerProfileController::class, 'index'])->name('index');
-            Route::get('/edit', [CleanerProfileController::class, 'edit'])->name('edit');
-            Route::put('/', [CleanerProfileController::class, 'update'])->name('update');
-            Route::put('/password', [CleanerProfileController::class, 'updatePassword'])->name('password');
-            Route::get('/statistics', [CleanerProfileController::class, 'statistics'])->name('statistics');
-        });
-    
 
 /*
 |--------------------------------------------------------------------------
@@ -181,25 +167,47 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     // ===== PROTECTED ROUTES (ADMIN) =====
     Route::middleware('admin')->group(function () {
-        // Logout
         Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
         
-        // Dashboard
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
         
         // User Management
         Route::prefix('users')->name('users.')->group(function () {
-            Route::get('/', [AdminDashboardController::class, 'users'])->name('index');
+            Route::get('/', [UserController::class, 'index'])->name('index');
+            Route::get('/{user}', [UserController::class, 'show'])->name('show');
+            Route::put('/{user}', [UserController::class, 'update'])->name('update');
+            Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
+            Route::post('/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('toggle-status');
         });
         
         // Cleaner Management
         Route::prefix('cleaners')->name('cleaners.')->group(function () {
-            Route::get('/', [AdminDashboardController::class, 'cleaners'])->name('index');
+            Route::get('/', [CleanerController::class, 'index'])->name('index');
+            Route::get('/{cleaner}', [CleanerController::class, 'show'])->name('show');
+            Route::put('/{cleaner}', [CleanerController::class, 'update'])->name('update');
+            Route::delete('/{cleaner}', [CleanerController::class, 'destroy'])->name('destroy');
+            Route::post('/{cleaner}/toggle-status', [CleanerController::class, 'toggleStatus'])->name('toggle-status');
         });
         
         // Order Management
         Route::prefix('orders')->name('orders.')->group(function () {
-            Route::get('/', [AdminDashboardController::class, 'orders'])->name('index');
+            Route::get('/', [OrderController::class, 'index'])->name('index');
+            Route::get('/{order}', [OrderController::class, 'show'])->name('show');
+            Route::put('/{order}', [OrderController::class, 'update'])->name('update');
+            Route::post('/{order}/assign-cleaner', [OrderController::class, 'assignCleaner'])->name('assign-cleaner');
+            Route::post('/{order}/update-status', [OrderController::class, 'updateStatus'])->name('update-status');
+            Route::get('/', [OrderController::class, 'monitoring'])->name('monitoring');
+            });
+
+        // Service Management
+        Route::prefix('services')->name('services.')->group(function () {
+            Route::get('/', [ServiceController::class, 'index'])->name('index');
+            Route::get('/create', [ServiceController::class, 'create'])->name('create');
+            Route::post('/', [ServiceController::class, 'store'])->name('store');
+            Route::get('/{service}/edit', [ServiceController::class, 'edit'])->name('edit');
+            Route::put('/{service}', [ServiceController::class, 'update'])->name('update');
+            Route::delete('/{service}', [ServiceController::class, 'destroy'])->name('destroy');
+            Route::post('/{service}/toggle-status', [ServiceController::class, 'toggleStatus'])->name('toggle-status');
         });
     });
 });

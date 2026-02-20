@@ -4,7 +4,7 @@
 @section('title', 'Pesanan Saya')
 
 @section('content')
-<div class="min-h-screen" style="background-color: #e8fdf3;">
+<div class="pb-20 bg-[#e8fdf3;]">
     {{-- Header dengan background gradient --}}
     <div class="rounded-b-2xl p-6 text-white shadow-lg relative overflow-hidden"
          style="background: linear-gradient(135deg, #00bda2 0%, #00c85f 100%);">
@@ -36,7 +36,7 @@
             </div>
 
             {{-- Konten Tab Aktif --}}
-            <div x-show="activeTab === 'aktif'" x-transition class="p-4 space-y-4">
+            <div x-show="activeTab === 'aktif'" x-transition class="p-4 space-y-4 mb-24">
                 @forelse($activeOrders as $order)
                 <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
                     {{-- Header Order --}}
@@ -118,7 +118,7 @@
                             {{-- Tombol Batalkan (untuk status tertentu) --}}
                             @if(in_array($order->status, ['pending', 'confirmed']))
                             <button onclick="showCancelModal('{{ $order->id }}')"
-                                class="border border-red-500 text-red-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-50 transition">
+                                class="flex items-center gap-1 text center border border-[#bd0000] text-[#bd0000] px-3 py-2 rounded-xl text-xs font-medium hover:text-[#800000] transition">
                                 Batalkan
                             </button>
                             @endif
@@ -138,9 +138,9 @@
             </div>
 
             {{-- Konten Tab Riwayat --}}
-            <div x-show="activeTab === 'riwayat'" x-transition class="p-4 space-y-4">
+            <div x-show="activeTab === 'riwayat'" x-transition class="p-4 space-y-4 mb-24">
                 @forelse($historyOrders as $order)
-                <div class="bg-white rounded-xl border border-gray-200 p-2  shadow-sm opacity-75">
+                <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
                     {{-- Header Order --}}
                     <div class="flex justify-between items-center mb-3">
                         <span class="text-sm font-medium text-gray-500">{{ $order->order_number }}</span>
@@ -164,7 +164,7 @@
                     {{-- Detail Order --}}
                     <div class="space-y-2 mb-4">
                         {{-- Nama Customer --}}
-                        <div class="flex items-start gap-3">
+                        <div class=" bg-white flex items-start gap-3">
                             <svg class="w-4 h-4 text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
@@ -196,7 +196,7 @@
                     </div>
 
                     {{-- Harga dan Tombol Aksi --}}
-                    <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+                    <div class="flex items-center justify-between pt-3 border-t border-gray-100">
                         <span class="text-sm font-bold text-[#12968a]">Rp {{ number_format($order->total, 0, ',', '.') }}</span>
                         
                         <div class="flex gap-2">
