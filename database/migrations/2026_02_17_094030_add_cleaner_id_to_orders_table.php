@@ -1,5 +1,4 @@
 <?php
-// database/migrations/[timestamp]_add_cleaner_id_to_orders_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -10,13 +9,19 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            $table->foreignId('cleaner_id')->nullable()->after('user_id')->constrained()->nullOnDelete();
+            // Tambah kolom cleaner_id (nullable karena order baru belum punya cleaner)
+            $table->foreignId('cleaner_id')
+                  ->nullable()
+                  ->after('user_id') // Letakkan setelah user_id
+                  ->constrained('cleaners') // Referensi ke tabel cleaners
+                  ->nullOnDelete(); // Jika cleaner dihapus, set jadi null
         });
     }
 
     public function down(): void
     {
         Schema::table('orders', function (Blueprint $table) {
+            // Hapus foreign key dulu baru hapus kolom
             $table->dropForeign(['cleaner_id']);
             $table->dropColumn('cleaner_id');
         });

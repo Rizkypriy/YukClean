@@ -87,13 +87,33 @@
 
     {{-- Charts Section --}}
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-50">
-            <h3 class="font-bold mb-4">Pesanan Per Hari</h3>
-            <canvas id="orderChart" height="100"></canvas>
+        <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold">Pesanan Per Hari</h3>
+                <div class="flex gap-4 text-xs">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 bg-teal-600 rounded-full"></span>
+                        <span>Total</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 bg-green-500 rounded-full"></span>
+                        <span>Selesai</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 bg-red-500 rounded-full"></span>
+                        <span>Batal</span>
+                    </div>
+                </div>
+            </div>
+            <div class="h-64">
+                <canvas id="orderChart" class="w-full h-full"></canvas>
+            </div>
         </div>
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-50">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
             <h3 class="font-bold mb-4">Layanan Populer</h3>
-            <canvas id="serviceChart" height="200"></canvas>
+            <div class="h-80">
+                <canvas id="serviceChart" class="w-full h-full"></canvas>
+            </div>
         </div>
     </section>
 
@@ -201,50 +221,126 @@
         });
     }
 
-    // Chart Pesanan Per Hari
+    // Chart Pesanan Per Hari - DATA REAL DARI DATABASE
     const ctxOrder = document.getElementById('orderChart')?.getContext('2d');
     if (ctxOrder) {
         new Chart(ctxOrder, {
             type: 'line',
             data: {
-                labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
-                datasets: [{
-                    data: [18, 22, 19, 25, 21, 28, 24],
-                    borderColor: '#0f766e',
-                    backgroundColor: 'rgba(15, 118, 110, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#0f766e',
-                }]
+                labels: {!! json_encode($chartLabels) !!},
+                datasets: [
+                    {
+                        label: 'Total Pesanan',
+                        data: {!! json_encode($chartData['total']) !!},
+                        borderColor: '#0d9488',
+                        backgroundColor: 'rgba(13, 148, 136, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#0d9488'
+                    },
+                    {
+                        label: 'Selesai',
+                        data: {!! json_encode($chartData['completed']) !!},
+                        borderColor: '#22c55e',
+                        backgroundColor: 'transparent',
+                        tension: 0.4,
+                        borderDash: [5, 5],
+                        pointBackgroundColor: '#22c55e'
+                    },
+                    {
+                        label: 'Dibatalkan',
+                        data: {!! json_encode($chartData['cancelled']) !!},
+                        borderColor: '#ef4444',
+                        backgroundColor: 'transparent',
+                        tension: 0.4,
+                        borderDash: [5, 5],
+                        pointBackgroundColor: '#ef4444'
+                    }
+                ]
             },
             options: {
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, grid: { display: false } } }
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
             }
         });
     }
 
-    // Chart Layanan Populer
+    // Chart Layanan Populer - DATA REAL DARI DATABASE
     const ctxService = document.getElementById('serviceChart')?.getContext('2d');
     if (ctxService) {
         new Chart(ctxService, {
             type: 'bar',
             data: {
-                labels: ['Rumah', 'Kantor', 'Kaca', 'Karpet', 'AC'],
+                labels: {!! json_encode($serviceLabels) !!},
                 datasets: [{
-                    data: [45, 32, 28, 22, 18],
+                    label: 'Jumlah Pesanan',
+                    data: {!! json_encode($serviceData) !!},
                     backgroundColor: '#14b8a6',
                     borderRadius: 6,
                 }]
             },
             options: {
                 indexAxis: 'y',
-                plugins: { legend: { display: false } },
-                scales: { x: { grid: { display: false } } }
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.raw + ' pesanan';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Jumlah Pesanan'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
             }
         });
     }
+
+    // Optional: Auto-refresh data setiap 5 menit
+    // setInterval(() => {
+    //     location.reload();
+    // }, 300000);
 </script>
 @endpush
 @endsection

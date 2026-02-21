@@ -10,6 +10,7 @@ use App\Models\Service;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportController extends Controller
 {
@@ -97,17 +98,16 @@ class ReportController extends Controller
      * Export laporan ke PDF
      */
     public function exportPdf(Request $request)
-    {
-        $startDate = $request->start_date ? Carbon::parse($request->start_date) : Carbon::now()->startOfWeek();
-        $endDate = $request->end_date ? Carbon::parse($request->end_date) : Carbon::now()->endOfWeek();
+{
+    $startDate = $request->start_date ? Carbon::parse($request->start_date) : Carbon::now()->startOfWeek();
+    $endDate = $request->end_date ? Carbon::parse($request->end_date) : Carbon::now()->endOfWeek();
 
-        $data = $this->getReportData($startDate, $endDate);
+    $data = $this->getReportData($startDate, $endDate);
 
-        $pdf = \PDF::loadView('admin.reports.pdf', $data);
-        
-        return $pdf->download('laporan-mingguan-'.$startDate->format('Ymd').'-'.$endDate->format('Ymd').'.pdf');
-    }
-
+    $pdf = Pdf::loadView('admin.reports.pdf', $data);
+    
+    return $pdf->download('laporan-mingguan-'.$startDate->format('Ymd').'-'.$endDate->format('Ymd').'.pdf');
+}
     /**
      * Export laporan ke Excel
      */

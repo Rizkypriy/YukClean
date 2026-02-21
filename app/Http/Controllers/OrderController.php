@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use App\Models\Review; 
 
 class OrderController extends Controller
 {
@@ -163,6 +164,7 @@ class OrderController extends Controller
                 'total' => $total,
                 'notes' => $request->notes,
                 'status' => 'pending',
+                'cleaner_id' => null
             ]);
 
             // 7. Buat Cleaner Task otomatis
@@ -413,73 +415,94 @@ class OrderController extends Controller
     /**
      * Handle rating from user.
      */
-    public function rate(Request $request, Order $order)
+   /**
+     * Handle rating from user.
+     */
+  public function rate(Request $request, Order $order)
 {
+    // Cek kepemilikan
     if ($order->user_id !== Auth::id()) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Unauthorized'
-        ], 403);
+        return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
     }
 
     $request->validate([
-        'rating' => 'required|integer|min:1|max:5'
+        'rating' => 'required|integer|min:1|max:5',
+        'review' => 'nullable|string|max:500'
     ]);
 
+    // 1. CARI CLEANER ID (LOGIC PRIORITAS)
+    // Cek di Order -> Cek di CleanerTask -> Cek di Cleaner (jika ada relasi langsung)
+    $cleanerId = $order->cleaner_id;
+    
+    if (!$cleanerId) {
+        $task = \App\Models\CleanerTask::where('order_id', $order->id)->first();
+        if ($task) {
+            $cleanerId = $task->cleaner_id;
+        }
+    }
+
+    // DEBUG: Jika masih null, catat di log laravel
+    if (!$cleanerId) {
+        \Log::error('Rating Gagal: cleaner_id tidak ditemukan untuk Order #' . $order->id);
+        return response()->json([
+            'success' => false, 
+            'message' => 'Petugas tidak ditemukan untuk pesanan ini. Pastikan petugas sudah dikonfirmasi.'
+        ], 422);
+    }
+
+    DB::beginTransaction();
     try {
-        // Simpan rating ke order
+        // 2. SIMPAN REVIEW
+        $review = new Review();
+        $review->user_id    = Auth::id();
+        $review->order_id   = $order->id;
+        $review->service_id = $order->service_id;
+        $review->cleaner_id = $cleanerId; // Pastikan ini terisi
+        $review->rating     = $request->rating;
+        $review->comment    = $request->review;
+        $review->save();
+
+        // 3. UPDATE ORDER
         $order->update([
-            'rating' => $request->rating
+            'rating' => $request->rating,
+            'review' => $request->review,
+            'cleaner_id' => $cleanerId // Sekalian isi kolom cleaner_id di tabel orders jika kosong
         ]);
 
-        // Jika ada cleaner, update rating cleaner
-        if ($order->cleaner_id) {
-            $cleaner = $order->cleaner;
-            if ($cleaner) {
-                // Hitung rata-rata rating baru untuk cleaner
-                $averageRating = Order::where('cleaner_id', $order->cleaner_id)
-                    ->whereNotNull('rating')
-                    ->avg('rating');
-                
-                $cleaner->update([
-                    'rating' => round($averageRating, 1)
-                ]);
+        // 4. UPDATE STATISTIK CLEANER
+        $cleaner = \App\Models\Cleaner::find($cleanerId);
+        if ($cleaner) {
+            // Hitung rata-rata dari semua order yang sudah ada ratingnya untuk petugas ini
+            $avgRating = Order::where('cleaner_id', $cleanerId)
+                              ->whereNotNull('rating')
+                              ->avg('rating');
 
-                // 🔥 TAMBAHKAN: Update satisfaction rate
-                $totalRatings = Order::where('cleaner_id', $order->cleaner_id)
-                    ->whereNotNull('rating')
-                    ->count();
-                
-                $goodRatings = Order::where('cleaner_id', $order->cleaner_id)
-                    ->where('rating', '>=', 4)
-                    ->whereNotNull('rating')
-                    ->count();
-                
-                $satisfactionRate = $totalRatings > 0 
-                    ? round(($goodRatings / $totalRatings) * 100) 
-                    : 100;
-                
-                $cleaner->update([
-                    'satisfaction_rate' => $satisfactionRate
-                ]);
-                // 🔥 SELESAI TAMBAHAN
-            }
+            $totalDone = Order::where('cleaner_id', $cleanerId)
+                              ->where('status', 'completed')
+                              ->count();
+
+            $cleaner->update([
+                'rating' => round($avgRating, 1),
+                'total_reviews' => $review->where('cleaner_id', $cleanerId)->count() // Jika ada kolom ini
+            ]);
         }
 
+        DB::commit();
+        
         return response()->json([
-            'success' => true,
-            'message' => 'Terima kasih atas ratingnya!'
+            'success' => true, 
+            'message' => 'Rating berhasil dikirim!'
         ]);
 
     } catch (\Exception $e) {
-        Log::error('Rating Error: ' . $e->getMessage());
+        DB::rollBack();
+        \Log::error('Detail Error Rating: ' . $e->getMessage());
         return response()->json([
-            'success' => false,
-            'message' => 'Gagal menyimpan rating'
+            'success' => false, 
+            'message' => 'Terjadi kesalahan: ' . $e->getMessage()
         ], 500);
     }
 }
-
     /**
      * Update notes for order
      */
@@ -499,4 +522,6 @@ class OrderController extends Controller
 
         return back()->with('success', 'Catatan berhasil diperbarui');
     }
+
+    
 }

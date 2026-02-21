@@ -13,7 +13,7 @@
 
     {{-- Form --}}
     <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 max-w-2xl">
-        <form action="{{ route('admin.services.store') }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('admin.services.store') }}" method="POST">
             @csrf
 
             {{-- Nama Layanan --}}
@@ -25,7 +25,7 @@
                        name="name" 
                        value="{{ old('name') }}"
                        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
-                       placeholder="Contoh: Pembersihan Rumah"
+                       placeholder="Contoh: Pembersihan Ruangan"
                        required>
                 @error('name')
                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -62,67 +62,64 @@
                 @enderror
             </div>
 
-            {{-- Harga Dasar --}}
+            {{-- Harga --}}
             <div class="mb-4">
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Harga Dasar (Rp) <span class="text-red-500">*</span>
+                    Harga (Rp) <span class="text-red-500">*</span>
                 </label>
                 <input type="number" 
-                       name="base_price" 
-                       value="{{ old('base_price') }}"
+                       name="price" 
+                       value="{{ old('price') }}"
                        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
-                       placeholder="Contoh: 500000"
+                       placeholder="Contoh: 150000"
                        min="0"
                        required>
-                @error('base_price')
+                @error('price')
                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                 @enderror
             </div>
 
-            {{-- Harga per Jam --}}
+            {{-- Durasi Minimal --}}
             <div class="mb-4">
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Harga per Jam (Rp) <span class="text-red-500">*</span>
+                    Durasi Minimal (Jam) <span class="text-red-500">*</span>
                 </label>
                 <input type="number" 
-                       name="price_per_hour" 
-                       value="{{ old('price_per_hour') }}"
-                       class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
-                       placeholder="Contoh: 75000"
-                       min="0"
-                       required>
-                @error('price_per_hour')
-                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                @enderror
-            </div>
-
-            {{-- Minimal Jam --}}
-            <div class="mb-4">
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Minimal Jam <span class="text-red-500">*</span>
-                </label>
-                <input type="number" 
-                       name="min_hours" 
-                       value="{{ old('min_hours', 1) }}"
+                       name="duration" 
+                       value="{{ old('duration', 1) }}"
                        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
                        min="1"
                        required>
-                @error('min_hours')
+                @error('duration')
                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                 @enderror
             </div>
 
-            {{-- Upload Gambar --}}
+            {{-- Icon Name --}}
             <div class="mb-4">
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Gambar Layanan</label>
-                <input type="file" 
-                       name="image" 
-                       accept="image/*"
-                       class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition">
-                <p class="text-xs text-gray-500 mt-1">Format: JPG, PNG, GIF. Maks: 2MB</p>
-                @error('image')
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Icon Layanan</label>
+                <select name="icon_name" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition">
+                    <option value="ruangan" {{ old('icon_name') == 'ruangan' ? 'selected' : '' }}>Ruangan</option>
+                    <option value="kamar" {{ old('icon_name') == 'kamar' ? 'selected' : '' }}>Kamar</option>
+                    <option value="ruang tamu" {{ old('icon_name') == 'ruang tamu' ? 'selected' : '' }}>Ruang Tamu</option>
+                    <option value="toilet" {{ old('icon_name') == 'toilet' ? 'selected' : '' }}>Toilet</option>
+                    <option value="dapur" {{ old('icon_name') == 'dapur' ? 'selected' : '' }}>Dapur</option>
+                </select>
+                @error('icon_name')
                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                 @enderror
+            </div>
+
+            {{-- Is Popular --}}
+            <div class="mb-4">
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" 
+                           name="is_popular" 
+                           value="1" 
+                           {{ old('is_popular') ? 'checked' : '' }}
+                           class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                    <span class="text-sm font-medium text-gray-700">Jadikan layanan populer</span>
+                </label>
             </div>
 
             {{-- Status Aktif --}}
@@ -151,4 +148,11 @@
         </form>
     </div>
 </div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Inisialisasi ikon Lucide
+    lucide.createIcons();
+</script>
 @endsection

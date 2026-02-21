@@ -25,11 +25,47 @@
     </p>
 
     {{-- Rating Section --}}
+    {{-- Rating Section --}}
 <div class="w-full max-w-md bg-gray-50 rounded-xl p-6 mb-6">
     <p class="text-gray-700 text-center mb-3">Bagaimana pengalaman Anda?</p>
     
-    {{-- Rating Stars dengan Alpine.js --}}
-    <div x-data="{ rating: 0, hoverRating: 0 }" class="mb-4">
+    {{-- Hubungkan Alpine.js secara penuh --}}
+    <div x-data="{ 
+        rating: 0, 
+        hoverRating: 0,
+        comment: '',
+        loading: false,
+        submitRating() {
+            if (this.rating === 0) return alert('Silakan pilih rating');
+            this.loading = true;
+
+            fetch('{{ route("user.orders.rate", $order) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    rating: this.rating,
+                    review: this.comment
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '{{ route("user.orders.index") }}';
+                } else {
+                    alert(data.message);
+                    this.loading = false;
+                }
+            })
+            .catch(e => {
+                alert('Terjadi kesalahan');
+                this.loading = false;
+            });
+        }
+    }" class="mb-4">
+        
         <div class="flex justify-center gap-2">
             <template x-for="star in 5" :key="star">
                 <button @mouseenter="hoverRating = star" 
@@ -45,20 +81,17 @@
             </template>
         </div>
         
-        {{-- Tampilkan rating yang dipilih --}}
-        <p x-show="rating > 0" class="text-center text-sm text-gray-600 mt-2" x-text="'Anda memberi rating ' + rating + ' bintang'"></p>
-        
-        {{-- Form Review (muncul setelah pilih rating) --}}
         <div x-show="rating > 0" x-transition class="mt-4">
-            <textarea id="reviewText"
+            <textarea x-model="comment"
                       rows="3" 
                       class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-300 mb-3"
                       placeholder="Tulis ulasan Anda (opsional)"></textarea>
 
-            {{-- Tombol Kirim Rating --}}
-            <button @click="submitRating(rating)"
-                    class="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition">
-                Kirim Rating
+            <button @click="submitRating()"
+                    :disabled="loading"
+                    class="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50">
+                <span x-show="!loading">Kirim Rating</span>
+                <span x-show="loading">⏳ Mengirim...</span>
             </button>
         </div>
     </div>
@@ -79,11 +112,19 @@
 </div>
 
 @push('scripts')
+{{-- Alpine.js CDN --}}
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 <script>
 window.submitRating = function(rating) {
     const review = document.getElementById('reviewText')?.value || '';
     const button = event.currentTarget;
     const originalText = button.innerText;
+    
+    // Validasi rating
+    if (rating === 0) {
+        alert('Silakan pilih rating terlebih dahulu');
+        return;
+    }
     
     // Loading state
     button.disabled = true;
@@ -100,20 +141,25 @@ window.submitRating = function(rating) {
             review: review
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             // Redirect ke halaman riwayat
             window.location.href = '{{ route("user.orders.index") }}';
         } else {
-            alert('Gagal: ' + data.message);
+            alert('Gagal: ' + (data.message || 'Terjadi kesalahan'));
             button.disabled = false;
             button.innerHTML = originalText;
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Terjadi kesalahan');
+        alert('Terjadi kesalahan: ' + error.message);
         button.disabled = false;
         button.innerHTML = originalText;
     });

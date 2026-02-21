@@ -48,9 +48,8 @@
                 <tr>
                     <th class="p-4 text-xs font-bold uppercase tracking-wider">Nama Layanan</th>
                     <th class="p-4 text-xs font-bold uppercase tracking-wider">Kategori</th>
-                    <th class="p-4 text-xs font-bold uppercase tracking-wider text-teal-800">Harga Dasar</th>
-                    <th class="p-4 text-xs font-bold uppercase tracking-wider">Harga per Jam</th>
-                    <th class="p-4 text-xs font-bold uppercase tracking-wider">Min Jam</th>
+                    <th class="p-4 text-xs font-bold uppercase tracking-wider text-teal-800">Harga</th>
+                    <th class="p-4 text-xs font-bold uppercase tracking-wider">Durasi Min</th>
                     <th class="p-4 text-xs font-bold uppercase tracking-wider">Status</th>
                     <th class="p-4 text-xs font-bold uppercase tracking-wider">Action</th>
                 </tr>
@@ -61,12 +60,11 @@
                     <td class="p-4 font-bold text-gray-900">{{ $service->name }}</td>
                     <td class="p-4">
                         <span class="px-3 py-1 bg-sky-100 text-sky-700 rounded-full text-xs font-bold border border-sky-200">
-                            {{ $service->category }}
+                            {{ $service->category ?? 'Umum' }}
                         </span>
                     </td>
-                    <td class="p-4 font-bold text-teal-700">{{ $service->price_formatted }}</td>
-                    <td class="p-4 text-gray-600">Rp {{ number_format($service->price_per_hour, 0, ',', '.') }}</td>
-                    <td class="p-4 text-gray-600">{{ $service->min_hours }} jam</td>
+                    <td class="p-4 font-bold text-teal-700">{{ $service->formatted_price }}</td>
+                    <td class="p-4 text-gray-600">{{ $service->duration }} jam</td>
                     <td class="p-4">
                         @if($service->is_active)
                             <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold border border-green-200">Aktif</span>
@@ -80,7 +78,7 @@
                                class="text-teal-600 hover:scale-110 transition-transform">
                                 <i data-lucide="edit-3" class="w-5 h-5"></i>
                             </a>
-                            <button onclick="deleteService({{ $service->id }})" 
+                            <button onclick="deleteService({{ $service->id }}, '{{ $service->name }}')" 
                                     class="text-red-500 hover:scale-110 transition-transform">
                                 <i data-lucide="trash-2" class="w-5 h-5"></i>
                             </button>
@@ -125,9 +123,6 @@
     // Inisialisasi Lucide Icons
     lucide.createIcons();
 
-    // Data dari Laravel untuk JavaScript (jika diperlukan untuk filter)
-    const services = @json($services->items());
-    
     // Dropdown Kategori Logic
     const dropBtn = document.getElementById('kategoriDropdownBtn');
     const dropContent = document.getElementById('kategoriDropdown');
@@ -154,6 +149,7 @@
             e.preventDefault();
             const value = link.dataset.value;
             selectedKategori.textContent = link.textContent;
+            selectedKategori.dataset.value = value;
             dropContent.classList.add('hidden');
             
             // Filter table rows
@@ -180,17 +176,8 @@
     }
 
     // Delete Service Function
-    function deleteService(id) {
-        // Cari nama layanan dari baris yang sesuai
-        const rows = tableBody.querySelectorAll('tr');
-        let serviceName = '';
-        rows.forEach(row => {
-            if (row.querySelector('button[onclick*="' + id + '"]')) {
-                serviceName = row.querySelector('td:first-child').textContent;
-            }
-        });
-        
-        document.getElementById('deleteLayananName').textContent = serviceName;
+    function deleteService(id, name) {
+        document.getElementById('deleteLayananName').textContent = name;
         document.getElementById('deleteModal').classList.remove('hidden');
         document.getElementById('deleteModal').classList.add('flex');
         
@@ -206,7 +193,6 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    alert(data.message);
                     location.reload();
                 } else {
                     alert('Gagal menghapus layanan');

@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Cleaner;
 use App\Models\Order;
+use App\Models\Service;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -21,6 +23,8 @@ class DashboardController extends Controller
     {
         $admin = Auth::guard('admin')->user();
         $today = Carbon::today();
+        $startOfWeek = Carbon::now()->startOfWeek();
+        $endOfWeek = Carbon::now()->endOfWeek();
         
         // Statistik untuk dashboard
         $stats = [
@@ -34,10 +38,70 @@ class DashboardController extends Controller
             
             // Statistik harian
             'total_orders_today' => Order::whereDate('created_at', $today)->count(),
-            'active_orders' => Order::whereIn('status', ['waiting', 'in_progress'])->count(),
-            'completed_orders_today' => Order::whereDate('created_at', $today)->count(),
+            'active_orders' => Order::whereIn('status', ['waiting', 'in_progress', 'on_progress'])->count(),
+            'completed_orders_today' => Order::whereDate('created_at', $today)
+                ->where('status', 'completed')
+                ->count(),
             'active_cleaners' => Cleaner::where('status', 'available')->count(),
+            
+            // 🔥 TAMBAHKAN: Pendapatan bulanan dan growth
+            'monthly_revenue' => Order::where('status', 'completed')
+                ->whereMonth('created_at', Carbon::now()->month)
+                ->sum('total'),
+            'revenue_growth' => $this->calculateRevenueGrowth(),
         ];
+
+        // 🔥 TAMBAHKAN: Data untuk Chart Pesanan Per Hari (7 hari terakhir)
+        $chartLabels = [];
+        $chartData = [
+            'total' => [],
+            'completed' => [],
+            'cancelled' => []
+        ];
+
+        for ($i = 6; $i >= 0; $i--) {
+            $date = Carbon::now()->subDays($i);
+            $chartLabels[] = $date->format('D');
+            
+            // Total pesanan per hari
+            $chartData['total'][] = Order::whereDate('created_at', $date)->count();
+            
+            // Pesanan selesai per hari
+            $chartData['completed'][] = Order::whereDate('created_at', $date)
+                ->where('status', 'completed')
+                ->count();
+            
+            // Pesanan dibatalkan per hari
+            $chartData['cancelled'][] = Order::whereDate('created_at', $date)
+                ->where('status', 'cancelled')
+                ->count();
+        }
+
+        // 🔥 TAMBAHKAN: Data untuk Chart Layanan Populer
+        $popularServices = Order::where('status', 'completed')
+            ->whereBetween('created_at', [$startOfWeek, $endOfWeek])
+            ->with('service')
+            ->select('service_id', DB::raw('COUNT(*) as total'))
+            ->groupBy('service_id')
+            ->orderBy('total', 'desc')
+            ->limit(5)
+            ->get();
+
+        $serviceLabels = [];
+        $serviceData = [];
+
+        foreach ($popularServices as $item) {
+            if ($item->service) {
+                $serviceLabels[] = $item->service->name;
+                $serviceData[] = $item->total;
+            }
+        }
+
+        // Jika data kosong, gunakan fallback
+        if (empty($serviceLabels)) {
+            $serviceLabels = ['Rumah', 'Kantor', 'Kaca', 'Karpet', 'AC'];
+            $serviceData = [45, 32, 28, 22, 18];
+        }
 
         // 10 pesanan terbaru
         $recentOrders = Order::with(['user', 'service', 'cleaner'])
@@ -55,7 +119,11 @@ class DashboardController extends Controller
             'admin', 
             'stats', 
             'recentOrders',
-            'topCleaners'
+            'topCleaners',
+            'chartLabels',      // 🔥 TAMBAHKAN
+            'chartData',        // 🔥 TAMBAHKAN
+            'serviceLabels',    // 🔥 TAMBAHKAN
+            'serviceData'       // 🔥 TAMBAHKAN
         ));
     }
 
@@ -76,7 +144,7 @@ class DashboardController extends Controller
             'completed_orders' => Order::where('status', 'completed')->count(),
             'revenue' => Order::where('status', 'completed')->sum('total'),
             'orders_today' => Order::whereDate('created_at', $today)->count(),
-            'active_orders' => Order::whereIn('status', ['waiting', 'in_progress'])->count(),
+            'active_orders' => Order::whereIn('status', ['waiting', 'in_progress', 'on_progress'])->count(),
             'active_cleaners' => Cleaner::where('status', 'available')->count(),
         ];
 
@@ -174,9 +242,101 @@ class DashboardController extends Controller
         ];
     }
 
+    /**
+     * Calculate revenue growth compared to previous month
+     *
+     * @return string
+     */
+    private function calculateRevenueGrowth()
+    {
+        $thisMonth = Order::where('status', 'completed')
+            ->whereMonth('created_at', Carbon::now()->month)
+            ->sum('total');
+        
+        $lastMonth = Order::where('status', 'completed')
+            ->whereMonth('created_at', Carbon::now()->subMonth()->month)
+            ->sum('total');
+        
+        if ($lastMonth == 0) return '+100%';
+        
+        $growth = (($thisMonth - $lastMonth) / $lastMonth) * 100;
+        
+        return ($growth >= 0 ? '+' : '') . round($growth) . '%';
+    }
+
+    /**
+     * Get weekly orders with completion status for chart
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getWeeklyChartData()
+    {
+        $labels = [];
+        $total = [];
+        $completed = [];
+        $cancelled = [];
+
+        for ($i = 6; $i >= 0; $i--) {
+            $date = Carbon::now()->subDays($i);
+            $labels[] = $date->format('D');
+            
+            $total[] = Order::whereDate('created_at', $date)->count();
+            $completed[] = Order::whereDate('created_at', $date)
+                ->where('status', 'completed')
+                ->count();
+            $cancelled[] = Order::whereDate('created_at', $date)
+                ->where('status', 'cancelled')
+                ->count();
+        }
+
+        return response()->json([
+            'labels' => $labels,
+            'data' => [
+                'total' => $total,
+                'completed' => $completed,
+                'cancelled' => $cancelled
+            ]
+        ]);
+    }
+
+    /**
+     * Get popular services data for chart
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getPopularServicesChart()
+    {
+        $startOfWeek = Carbon::now()->startOfWeek();
+        $endOfWeek = Carbon::now()->endOfWeek();
+
+        $popularServices = Order::where('status', 'completed')
+            ->whereBetween('created_at', [$startOfWeek, $endOfWeek])
+            ->with('service')
+            ->select('service_id', DB::raw('COUNT(*) as total'))
+            ->groupBy('service_id')
+            ->orderBy('total', 'desc')
+            ->limit(5)
+            ->get();
+
+        $labels = [];
+        $data = [];
+
+        foreach ($popularServices as $item) {
+            if ($item->service) {
+                $labels[] = $item->service->name;
+                $data[] = $item->total;
+            }
+        }
+
+        return response()->json([
+            'labels' => $labels,
+            'data' => $data
+        ]);
+    }
+
     public function orders()
-{
-    $orders = Order::with(['user', 'cleaner', 'service'])->latest()->paginate(15);
-    return view('admin.orders.index', compact('orders'));
-}
+    {
+        $orders = Order::with(['user', 'cleaner', 'service'])->latest()->paginate(15);
+        return view('admin.orders.index', compact('orders'));
+    }
 }

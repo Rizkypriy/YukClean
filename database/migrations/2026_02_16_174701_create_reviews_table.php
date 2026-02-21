@@ -16,7 +16,9 @@ return new class extends Migration
             $table->tinyInteger('rating')->unsigned(); // 1-5
             $table->text('comment')->nullable();
             $table->timestamps();
-        });
+            $$table->foreignId('cleaner_id')->nullable()->constrained('cleaners')->onDelete('cascade');
+});
+       
     }
 
     public function down(): void

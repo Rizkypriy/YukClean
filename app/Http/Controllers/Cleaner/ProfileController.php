@@ -1,16 +1,17 @@
 <?php
-// app/Http/Controllers/Cleaner/ProfileController.php
 
 namespace App\Http\Controllers\Cleaner;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cleaner;
 use App\Models\CleanerTask;
+use App\Models\Review; 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class ProfileController extends Controller
 {
@@ -20,33 +21,56 @@ class ProfileController extends Controller
     public function index()
     {
         /** @var Cleaner $cleaner */
-        $cleaner = Auth::guard('cleaner')->user();
+        // 1. Ambil data Cleaner langsung dari DB agar fresh
+        $cleanerId = Auth::guard('cleaner')->id();
+        $cleaner = Cleaner::findOrFail($cleanerId);
+
+        // 2. 🔥 HITUNG RATING (Otomatis & Real-time)
+        // Mengambil rata-rata dari tabel ulasan berdasarkan cleaner_id
+        $rating = Review::where('cleaner_id', $cleaner->id)->avg('rating') ?: 0;
+        $rating = round($rating, 1); // Membulatkan ke 1 desimal (contoh: 4.5)
         
-        // Statistik umum
+        // 3. Hitung kepuasan secara dinamis
+        $totalReviews = Review::where('cleaner_id', $cleaner->id)->count();
+        if ($totalReviews > 0) {
+            $positiveReviews = Review::where('cleaner_id', $cleaner->id)
+                ->where('rating', '>=', 4)
+                ->count();
+            $satisfaction = round(($positiveReviews / $totalReviews) * 100);
+        } else {
+            $satisfaction = 0;
+        }
+
+        // --- UPDATE SYNC (Opsional tapi disarankan) ---
+        // Sinkronisasi data hitungan real-time ke kolom tabel cleaners agar cache database tetap akurat
+        $cleaner->update([
+            'rating' => $rating,
+            'satisfaction_rate' => $satisfaction
+        ]);
+        // ----------------------------------------------
+        
+        // 4. Statistik umum
         $totalTasks = CleanerTask::where('cleaner_id', $cleaner->id)->count();
         $completedTasks = CleanerTask::where('cleaner_id', $cleaner->id)
             ->where('status', 'completed')
             ->count();
         
-        // Rating dan kepuasan (dari model cleaner)
-        $rating = $cleaner->rating ?? 5.0;
-        $satisfaction = $cleaner->satisfaction_rate ?? 98;
-        
-        // Aktivitas terakhir
+        // 5. Ulasan terbaru dengan relasi user
+       $recentReviews = Review::where('cleaner_id', $cleaner->getKey()) // Mengambil primary key apapun namanya
+            ->with('user')
+            ->latest()
+            ->limit(5)
+            ->get();
+        // 6. Aktivitas terakhir
         $recentTasks = CleanerTask::where('cleaner_id', $cleaner->id)
             ->where('status', 'completed')
             ->orderBy('completed_at', 'desc')
             ->limit(5)
             ->get();
         
-        // Performa bulan ini
+        // 7. Performa bulan ini
         $currentMonth = now()->month;
         $currentYear = now()->year;
-        
-        $monthlyPerformance = $cleaner->performance()
-            ->where('month', $currentMonth)
-            ->where('year', $currentYear)
-            ->first();
         
         $monthlyCompleted = CleanerTask::where('cleaner_id', $cleaner->id)
             ->whereMonth('task_date', $currentMonth)
@@ -60,14 +84,15 @@ class ProfileController extends Controller
             ->distinct('task_date')
             ->count('task_date');
         
+        // 8. Kirim semua data ke view
         return view('cleaner.profile.index', compact(
             'cleaner',
             'totalTasks',
             'completedTasks',
             'rating',
             'satisfaction',
+            'recentReviews',
             'recentTasks',
-            'monthlyPerformance',
             'monthlyCompleted',
             'activeDays'
         ));
@@ -78,7 +103,6 @@ class ProfileController extends Controller
      */
     public function edit()
     {
-        /** @var Cleaner $cleaner */
         $cleaner = Auth::guard('cleaner')->user();
         return view('cleaner.profile.edit', compact('cleaner'));
     }
@@ -112,14 +136,10 @@ class ProfileController extends Controller
             'radius_km' => $request->radius_km ?? 5,
         ];
 
-        // Handle avatar upload
         if ($request->hasFile('avatar')) {
-            // Delete old avatar
             if ($cleaner->avatar) {
                 Storage::disk('public')->delete($cleaner->avatar);
             }
-            
-            // Store new avatar
             $path = $request->file('avatar')->store('cleaner-avatars', 'public');
             $data['avatar'] = $path;
         }
@@ -139,10 +159,7 @@ class ProfileController extends Controller
             'current_password' => 'required|current_password:cleaner',
             'new_password' => 'required|string|min:8|confirmed',
         ], [
-            'current_password.required' => 'Password saat ini harus diisi',
             'current_password.current_password' => 'Password saat ini salah',
-            'new_password.required' => 'Password baru harus diisi',
-            'new_password.min' => 'Password baru minimal 8 karakter',
             'new_password.confirmed' => 'Konfirmasi password tidak cocok',
         ]);
 
@@ -167,23 +184,27 @@ class ProfileController extends Controller
     public function statistics()
     {
         /** @var Cleaner $cleaner */
-        $cleaner = Auth::guard('cleaner')->user();
+        $cleanerId = Auth::guard('cleaner')->id();
+        $cleaner = Cleaner::findOrFail($cleanerId);
         
-        // Monthly statistics for chart
+        // Monthly stats dari performance relation
         $monthlyStats = $cleaner->performance()
             ->orderBy('year', 'desc')
             ->orderBy('month', 'desc')
             ->limit(6)
             ->get();
         
-        // Task statistics
+        // Hitung real-time rating untuk statistik agar sinkron
+        $currentRating = Review::where('cleaner_id', $cleaner->id)->avg('rating') ?: 0;
+        
         $taskStats = [
-            'total' => $cleaner->total_tasks,
+            'total' => CleanerTask::where('cleaner_id', $cleaner->id)->count(),
             'this_month' => CleanerTask::where('cleaner_id', $cleaner->id)
                 ->whereMonth('completed_at', now()->month)
                 ->whereYear('completed_at', now()->year)
+                ->where('status', 'completed')
                 ->count(),
-            'avg_rating' => $cleaner->rating,
+            'avg_rating' => round($currentRating, 1),
             'satisfaction' => $cleaner->satisfaction_rate,
         ];
         

@@ -61,7 +61,7 @@
         @empty
         {{-- Tampilkan promo default jika tidak ada di database --}}
         <div class="rounded-2xl p-3 text-white shadow-lg relative overflow-hidden"
-            style="background: linear-gradient(135deg, #be79ff 0%, #645fff  100%);">
+            style="background: linear-gradient(135deg, #be79ff 0%, #645fff 100%);">
             <div class="absolute top-0 right-0 w-28 h-28 bg-white opacity-10 rounded-full -mr-8 -mt-8"></div>
             <div class="absolute bottom-0 left-0 w-20 h-20 bg-white opacity-10 rounded-full -ml-6 -mb-6"></div>
             <div class="relative">
@@ -73,7 +73,7 @@
             </div>
         </div>
         <div class="rounded-2xl p-3 text-white shadow-lg relative overflow-hidden"
-            style="background: linear-gradient(135deg, #be79ff 0%, #645fff 100%);">
+            style="background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);">
             <div class="absolute top-0 right-0 w-28 h-28 bg-white opacity-10 rounded-full -mr-8 -mt-8"></div>
             <div class="absolute bottom-0 left-0 w-20 h-20 bg-white opacity-10 rounded-full -ml-6 -mb-6"></div>
             <div class="relative">
@@ -95,11 +95,13 @@
         <div class="grid grid-cols-2 gap-4" id="servicesContainer">
             @forelse($services as $service)
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition flex flex-col h-full service-item">
-                <div class="w-12 h-12 bg-{{ $service->color ?? 'green' }}-100 rounded-xl flex items-center justify-center mb-3 shrink-0 mx-auto">
-                    <svg class="w-6 h-6 text-{{ $service->color ?? 'green' }}-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {{-- Icon dengan warna hijau konsisten --}}
+                <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-3 shrink-0 mx-auto">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="{{ $service->icon_path }}" />
                     </svg>
                 </div>
+                
                 <div class="flex-1 flex flex-col">
                     <div class="text-center">
                         <h3 class="font-semibold text-gray-800">{{ $service->name }}</h3>
@@ -107,6 +109,7 @@
                     </div>
                     <p class="text-green-600 font-bold text-sm mt-auto text-center">{{ $service->formatted_price }}</p>
                 </div>
+                
                 <a href="{{ route('user.orders.create', $service) }}" 
                    class="w-full text-white py-2.5 rounded-lg text-xs font-medium transition-all duration-300 mt-4 shadow-md hover:shadow-lg text-center block"
                    style="background: linear-gradient(135deg, #00bca4 0%, #00c954 100%);"
@@ -124,7 +127,7 @@
     </div>
 
     {{-- Paket Bundling Hemat --}}
-    @if($bundles->isNotEmpty())
+    @if(isset($bundles) && $bundles->isNotEmpty())
     <div class="px-5 mt-8 mb-24">
         <h2 class="text-lg font-semibold mb-3">Paket Bundling Hemat</h2>
 

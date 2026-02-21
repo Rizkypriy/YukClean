@@ -13,6 +13,8 @@ class Review extends Model
         'service_id',
         'rating',
         'comment',
+        'cleaner_id '
+        
     ];
 
     protected $casts = [
@@ -22,6 +24,7 @@ class Review extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function order(): BelongsTo
@@ -32,5 +35,10 @@ class Review extends Model
     public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class);
+    }
+
+    public function cleaner()
+    {
+        return $this->belongsTo(Cleaner::class, 'cleaner_id');
     }
 }

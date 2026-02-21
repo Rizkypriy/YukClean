@@ -95,26 +95,28 @@
     </div>
 
     {{-- Grafik Pesanan per Hari --}}
-    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-semibold text-gray-900">Pesanan per Hari</h2>
-            <div class="flex gap-4 text-sm">
-                <div class="flex items-center gap-2">
-                    <span class="w-3 h-3 bg-teal-600 rounded-full"></span>
-                    <span>Total</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="w-3 h-3 bg-green-500 rounded-full"></span>
-                    <span>Selesai</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="w-3 h-3 bg-red-500 rounded-full"></span>
-                    <span>Batal</span>
-                </div>
+   <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-semibold text-gray-900">Pesanan per Hari</h2>
+        <div class="flex gap-4 text-sm">
+            <div class="flex items-center gap-2">
+                <span class="w-3 h-3 bg-teal-600 rounded-full"></span>
+                <span>Total</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-3 h-3 bg-green-500 rounded-full"></span>
+                <span>Selesai</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-3 h-3 bg-red-500 rounded-full"></span>
+                <span>Batal</span>
             </div>
         </div>
-        <canvas id="ordersChart" height="100"></canvas>
     </div>
+    <div class="h-64"> {{-- Container dengan tinggi tetap --}}
+        <canvas id="ordersChart" class="w-full h-full"></canvas>
+    </div>
+</div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {{-- Layanan Terpopuler --}}
@@ -227,7 +229,11 @@
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+
 <script>
+      // Inisialisasi Lucide Icons
+    lucide.createIcons();
     // Grafik Pesanan
     const ctx = document.getElementById('ordersChart').getContext('2d');
     new Chart(ctx, {

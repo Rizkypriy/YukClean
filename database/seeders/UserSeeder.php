@@ -19,8 +19,10 @@ class UserSeeder extends Seeder
                 'member_level' => 'Gold',
                 'total_orders' => 23,
                 'role' => 'user',
-                'is_active' => true, // <-- TAMBAHKAN ROLE
-                'password' => Hash::make('password123'),
+                'is_active' => true,
+                'password' => Hash::make('password123'), // PASTIKAN INI ADA
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
                 'name' => 'Budi Santoso',

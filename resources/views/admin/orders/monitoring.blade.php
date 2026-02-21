@@ -190,42 +190,42 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                    @forelse($completedJobs as $job)
-                    <tr class="hover:bg-teal-50/50 transition-colors">
-                        <td class="p-4 text-sm font-bold">{{ $job->order_number }}</td>
-                        <td class="p-4 text-sm">{{ $job->user->name ?? $job->customer_name }}</td>
-                        <td class="p-4 text-sm">{{ $job->cleaner->name ?? '-' }}</td>
-                        <td class="p-4 text-sm">
-                            <span class="px-3 py-1 bg-gray-100 rounded-md text-xs font-medium">
-                                {{ $job->service->name ?? 'Layanan' }}
-                            </span>
-                        </td>
-                        <td class="p-4 text-sm">{{ $job->completed_at ? $job->completed_at->format('d M Y, H:i') : '-' }}</td>
-                        <td class="p-4">
-                            @if($job->rating)
-                            <div class="flex gap-0.5">
-                                @for($i = 1; $i <= 5; $i++)
-                                    @if($i <= $job->rating)
-                                        <i data-lucide="star" class="w-4 h-4 fill-amber-400 text-amber-400"></i>
-                                    @else
-                                        <i data-lucide="star" class="w-4 h-4 text-gray-300"></i>
-                                    @endif
-                                @endfor
-                            </div>
-                            @else
-                            <span class="text-gray-400 text-xs">Belum ada rating</span>
-                            @endif
-                        </td>
-                        <td class="p-4 text-sm font-bold text-yuk-teal">Rp {{ number_format($job->total, 0, ',', '.') }}</td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="7" class="p-8 text-center text-gray-500">Belum ada pekerjaan selesai</td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+    @forelse($completedJobs as $job)
+    <tr class="hover:bg-teal-50/50 transition-colors">
+        <td class="p-4 text-sm font-bold">{{ $job->order_number }}</td>
+        <td class="p-4 text-sm">{{ $job->user->name ?? $job->customer_name }}</td>
+        <td class="p-4 text-sm">{{ $job->cleaner->name ?? '-' }}</td>
+        <td class="p-4 text-sm">
+            <span class="px-3 py-1 bg-gray-100 rounded-md text-xs font-medium">
+                {{ $job->service->name ?? 'Layanan' }}
+            </span>
+        </td>
+        <td class="p-4 text-sm">
+            {{ $job->completed_at ? \Carbon\Carbon::parse($job->completed_at)->format('d M Y, H:i') : '-' }}
+        </td>
+        <td class="p-4">
+            @if($job->rating)
+            <div class="flex gap-0.5">
+                @for($i = 1; $i <= 5; $i++)
+                    @if($i <= $job->rating)
+                        <i data-lucide="star" class="w-4 h-4 fill-amber-400 text-amber-400"></i>
+                    @else
+                        <i data-lucide="star" class="w-4 h-4 text-gray-300"></i>
+                    @endif
+                @endfor
+            </div>
+            @else
+            <span class="text-gray-400 text-xs">Belum ada rating</span>
+            @endif
+        </td>
+        <td class="p-4 text-sm font-bold text-yuk-teal">Rp {{ number_format($job->total, 0, ',', '.') }}</td>
+    </tr>
+    @empty
+    <tr>
+        <td colspan="7" class="p-8 text-center text-gray-500">Belum ada pekerjaan selesai</td>
+    </tr>
+    @endforelse
+</tbody>
 
         {{-- Pagination --}}
         @if($completedJobs->hasPages())

@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController; 
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\CleanerController;
+use App\Http\Controllers\Admin\ReportController; // 🔥 TAMBAHKAN
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
@@ -76,7 +77,6 @@ Route::prefix('user')->name('user.')->group(function () {
             Route::get('/completed/{order}', [OrderController::class, 'completed'])->name('completed');
             Route::post('/{order}/rate', [OrderController::class, 'rate'])->name('rate');
             Route::put('/{order}/update-notes', [OrderController::class, 'updateNotes'])->name('update-notes');
-            
         });
         
         // Profile
@@ -189,15 +189,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/{cleaner}/toggle-status', [CleanerController::class, 'toggleStatus'])->name('toggle-status');
         });
         
-        // Order Management
+        // Order Management - ADMIN
         Route::prefix('orders')->name('orders.')->group(function () {
-            Route::get('/', [OrderController::class, 'index'])->name('index');
-            Route::get('/{order}', [OrderController::class, 'show'])->name('show');
-            Route::put('/{order}', [OrderController::class, 'update'])->name('update');
-            Route::post('/{order}/assign-cleaner', [OrderController::class, 'assignCleaner'])->name('assign-cleaner');
-            Route::post('/{order}/update-status', [OrderController::class, 'updateStatus'])->name('update-status');
-            Route::get('/', [AdminOrderController::class, 'monitoring'])->name('monitoring');
-            });
+            Route::get('/', [AdminOrderController::class, 'monitoring'])->name('monitoring'); // 🔥 PERBAIKI
+            Route::get('/{order}', [AdminOrderController::class, 'show'])->name('show');
+            Route::put('/{order}', [AdminOrderController::class, 'update'])->name('update');
+            Route::post('/{order}/assign-cleaner', [AdminOrderController::class, 'assignCleaner'])->name('assign-cleaner');
+            Route::post('/{order}/update-status', [AdminOrderController::class, 'updateStatus'])->name('update-status');
+        });
 
         // Service Management
         Route::prefix('services')->name('services.')->group(function () {
@@ -208,23 +207,18 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::put('/{service}', [ServiceController::class, 'update'])->name('update');
             Route::delete('/{service}', [ServiceController::class, 'destroy'])->name('destroy');
             Route::post('/{service}/toggle-status', [ServiceController::class, 'toggleStatus'])->name('toggle-status');
+            Route::post('/admin/services', [ServiceController::class, 'store'])->name('admin.services.store');
         });
 
+        // Reports (di dalam group admin)
         Route::prefix('reports')->name('reports.')->group(function () {
-    Route::get('/weekly', [App\Http\Controllers\Admin\ReportController::class, 'weekly'])->name('weekly');
-    Route::get('/export/pdf', [App\Http\Controllers\Admin\ReportController::class, 'exportPdf'])->name('export.pdf');
-    Route::get('/export/excel', [App\Http\Controllers\Admin\ReportController::class, 'exportExcel'])->name('export.excel');
-});
+            Route::get('/weekly', [ReportController::class, 'weekly'])->name('weekly');
+            Route::get('/export/pdf', [ReportController::class, 'exportPdf'])->name('export.pdf');
+            Route::get('/export/excel', [ReportController::class, 'exportExcel'])->name('export.excel');
+        });
     });
 });
 
-
-// Admin routes - Reports
-Route::prefix('reports')->name('reports.')->group(function () {
-    Route::get('/weekly', [App\Http\Controllers\Admin\ReportController::class, 'weekly'])->name('weekly');
-    Route::get('/export/pdf', [App\Http\Controllers\Admin\ReportController::class, 'exportPdf'])->name('export.pdf');
-    Route::get('/export/excel', [App\Http\Controllers\Admin\ReportController::class, 'exportExcel'])->name('export.excel');
-});
 /*
 |--------------------------------------------------------------------------
 | FALLBACK ROUTE (404)
