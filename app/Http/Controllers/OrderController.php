@@ -124,8 +124,8 @@ class OrderController extends Controller
             if ($request->filled('promo_code')) {
                 $promo = Promo::where('code', $request->promo_code)
                     ->where('is_active', true)
-                    ->where('start_date', '<=', now())
-                    ->where('end_date', '>=', now())
+                    ->where('valid_from', '<=', now())
+                    ->where('valid_until', '>=', now())
                     ->first();
                 
                 if ($promo && $subtotal >= $promo->min_purchase) {
@@ -373,8 +373,8 @@ class OrderController extends Controller
 
         $promo = Promo::where('code', $request->code)
             ->where('is_active', true)
-            ->where('start_date', '<=', now())
-            ->where('end_date', '>=', now())
+            ->where('valid_from', '<=', now())
+            ->where('valid_until', '>=', now())
             ->first();
 
         if (!$promo) {

@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HomeController;
-// use App\Http\Controllers\OrderController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PromoController;
 use App\Http\Controllers\BundleController;
@@ -14,7 +14,7 @@ use App\Http\Controllers\Cleaner\ProfileController as CleanerProfileController;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ServiceController;
-use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\OrderController as AdminOrderController; 
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\CleanerController;
 use Illuminate\Support\Facades\Route;
@@ -196,7 +196,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::put('/{order}', [OrderController::class, 'update'])->name('update');
             Route::post('/{order}/assign-cleaner', [OrderController::class, 'assignCleaner'])->name('assign-cleaner');
             Route::post('/{order}/update-status', [OrderController::class, 'updateStatus'])->name('update-status');
-            Route::get('/', [OrderController::class, 'monitoring'])->name('monitoring');
+            Route::get('/', [AdminOrderController::class, 'monitoring'])->name('monitoring');
             });
 
         // Service Management
@@ -209,9 +209,22 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('/{service}', [ServiceController::class, 'destroy'])->name('destroy');
             Route::post('/{service}/toggle-status', [ServiceController::class, 'toggleStatus'])->name('toggle-status');
         });
+
+        Route::prefix('reports')->name('reports.')->group(function () {
+    Route::get('/weekly', [App\Http\Controllers\Admin\ReportController::class, 'weekly'])->name('weekly');
+    Route::get('/export/pdf', [App\Http\Controllers\Admin\ReportController::class, 'exportPdf'])->name('export.pdf');
+    Route::get('/export/excel', [App\Http\Controllers\Admin\ReportController::class, 'exportExcel'])->name('export.excel');
+});
     });
 });
 
+
+// Admin routes - Reports
+Route::prefix('reports')->name('reports.')->group(function () {
+    Route::get('/weekly', [App\Http\Controllers\Admin\ReportController::class, 'weekly'])->name('weekly');
+    Route::get('/export/pdf', [App\Http\Controllers\Admin\ReportController::class, 'exportPdf'])->name('export.pdf');
+    Route::get('/export/excel', [App\Http\Controllers\Admin\ReportController::class, 'exportExcel'])->name('export.excel');
+});
 /*
 |--------------------------------------------------------------------------
 | FALLBACK ROUTE (404)

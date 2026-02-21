@@ -8,15 +8,35 @@
     {{-- Header --}}
     <div class="bg-white shadow-lg px-7 py-6 mb-6">
         <div class="flex items-center gap-3">
-            <div>
-                <a href="{{ route('user.orders.create',  $order->service_id) }}" class="inline-flex items-center text-black    ">
-                    <svg class="w-5 h-5 mr-2 " fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {{-- TOMBOL KEMBALI - MENANGANI SERVICE DAN BUNDLE --}}
+            @if($order->service_id)
+                {{-- Kembali ke form pemesanan service --}}
+                <a href="{{ route('user.orders.create', $order->service_id) }}" 
+                   class="inline-flex items-center text-black hover:text-gray-600 transition">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                     </svg>
                 </a>
-            </div>
+            @elseif($order->bundle_id)
+                {{-- Kembali ke form pemesanan bundle --}}
+                <a href="{{ route('user.orders.create.bundle', $order->bundle_id) }}" 
+                   class="inline-flex items-center text-black hover:text-gray-600 transition">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </a>
+            @else
+                {{-- Fallback ke dashboard --}}
+                <a href="{{ route('user.dashboard') }}" 
+                   class="inline-flex items-center text-black hover:text-gray-600 transition">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </a>
+            @endif
+            
             <div>
-                <h1 class="text-xl font-semibold text-black ">Pembayaran</h1>
+                <h1 class="text-xl font-semibold text-black">Pembayaran</h1>
             </div>
         </div>
     </div>

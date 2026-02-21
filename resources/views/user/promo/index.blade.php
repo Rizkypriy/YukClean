@@ -8,7 +8,11 @@
     <div class="rounded-b-2xl p-5 text-white shadow-lg relative overflow-hidden"
          style="background: linear-gradient(135deg, #00bda2 0%, #00c85f 100%);">
         <div class="flex items-center justify-between mb-6">
-            <h1 class="text-2xl font-bold">Yuk Clean</h1>
+            <div class="flex items-center gap-2">
+                {{-- Logo --}}
+                <img src="{{ asset('img/logo.png') }}" alt="Yuk Clean Logo" class="w-8 h-8">
+                <h1 class="text-xl font-bold">Yuk Clean</h1>
+            </div>
         </div>
 
         {{-- Welcome Message --}}

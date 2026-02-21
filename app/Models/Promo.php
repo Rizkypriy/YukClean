@@ -22,8 +22,8 @@ class Promo extends Model
     ];
 
     protected $casts = [
-        'start_date' => 'date',
-        'end_date' => 'date',
+        'valid_from' => 'date',
+        'valid_until' => 'date',
         'is_active' => 'boolean',
         'discount_value' => 'decimal:2',
         'min_purchase' => 'decimal:2',

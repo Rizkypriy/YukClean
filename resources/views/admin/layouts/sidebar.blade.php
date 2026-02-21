@@ -1,11 +1,10 @@
-<aside class="w-64 bg-teal-800 text-white flex flex-col justify-between p-6 shrink-0">
-    {{-- Header Sidebar --}}
+<aside class="w-80 bg-teal-800 text-white flex flex-col justify-between p-6 shrink-0">    {{-- Header Sidebar --}}
     <div>
-        <div class="flex items-center gap-3 mb-10">
-            <i data-lucide="sparkles" class="w-8 h-8"></i>
+        <div class="flex items-center gap-3 mb-10 border-b border-teal-600">
+            <img src="{{ asset('img/logo1.png') }}" alt="Yuk Clean Logo" class="w-20 h-20">
             <div>
                 <h2 class="text-xl font-bold leading-tight">YukClean</h2>
-                <span class="text-xs opacity-75 text-cyan-100">Admin Dashboard</span>
+                <span class="text-xs text-teal-300">Admin Dashboard</span>
             </div>
         </div>
 
@@ -34,6 +33,12 @@
                 <i data-lucide="package" class="w-5 h-5"></i> 
                 Pengelolaan Layanan
             </a>
+
+            <a href="{{ route('admin.reports.weekly') }}" 
+   class="flex items-center gap-3 p-3 rounded-xl transition-all {{ request()->routeIs('admin.reports.*') ? 'bg-teal-700 font-semibold' : 'hover:bg-white/10 text-cyan-50' }}">
+    <i data-lucide="file-text" class="w-5 h-5"></i> 
+    Laporan Mingguan
+</a>
         </nav>
     </div>
 
