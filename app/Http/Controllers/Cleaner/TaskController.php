@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Models\OrderTracking; // <-- TAMBAHKAN INI
+use App\Events\OrderLocationUpdated; // <-- TAMBAHKAN INI (kalau pakai event)
 
 class TaskController extends Controller
 {
@@ -212,4 +214,85 @@ class TaskController extends Controller
                 cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
         return $angle * $earthRadius;
     }
+
+    /**
+     * Update lokasi cleaner untuk task tertentu.
+     */
+    /**
+ * Update lokasi cleaner untuk task tertentu.
+ */
+public function updateLocation(Request $request, CleanerTask $task)
+{
+    // Pastikan task milik cleaner yang sedang login
+    if ($task->cleaner_id !== Auth::guard('cleaner')->id()) {
+        return response()->json(['error' => 'Unauthorized'], 403);
+    }
+
+    $request->validate([
+        'latitude' => 'required|numeric',
+        'longitude' => 'required|numeric',
+    ]);
+
+    DB::beginTransaction();
+    try {
+        // CEK DULU APAKAH MODEL OrderTracking ADA
+        if (!class_exists('App\Models\OrderTracking')) {
+            // Buat tracking tanpa model dulu (simpan ke log)
+            Log::info('Location update for task ' . $task->id, [
+                'order_id' => $task->order_id,
+                'cleaner_id' => Auth::guard('cleaner')->id(),
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude
+            ]);
+            
+            // OPSI 1: Simpan ke tabel cleaner_locations (alternatif)
+            DB::table('cleaner_locations')->updateOrInsert(
+                [
+                    'cleaner_id' => Auth::guard('cleaner')->id(),
+                    'task_id' => $task->id
+                ],
+                [
+                    'latitude' => $request->latitude,
+                    'longitude' => $request->longitude,
+                    'updated_at' => now()
+                ]
+            );
+        } else {
+            // Simpan ke database tracking (pakai model)
+            $tracking = OrderTracking::create([
+                'order_id'   => $task->order_id,
+                'cleaner_id' => Auth::guard('cleaner')->id(),
+                'latitude'   => $request->latitude,
+                'longitude'  => $request->longitude,
+            ]);
+        }
+
+        // BROADCAST - cek dulu apakah class event ada
+        if (class_exists('App\Events\OrderLocationUpdated')) {
+            try {
+                broadcast(new OrderLocationUpdated(
+                    $task->order_id,
+                    $request->latitude,
+                    $request->longitude
+                ));
+            } catch (\Exception $e) {
+                Log::warning('Broadcast failed: ' . $e->getMessage());
+                // Abaikan error broadcast, jangan sampai rollback transaksi
+            }
+        }
+
+        DB::commit();
+
+        return response()->json([
+            'success' => true, 
+            'message' => 'Lokasi terkirim'
+        ]);
+
+    } catch (\Exception $e) {
+    DB::rollBack();
+    Log::error('Update Lokasi Error: ' . $e->getMessage());
+    return response()->json(['error' => 'Gagal mengirim lokasi'], 500);
+
+    }
+}
 }

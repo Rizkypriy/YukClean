@@ -149,7 +149,11 @@ Route::prefix('cleaner')->name('cleaner.')->group(function () {
             Route::put('/password', [CleanerProfileController::class, 'updatePassword'])->name('password');
             Route::get('/statistics', [CleanerProfileController::class, 'statistics'])->name('statistics');
         });
+
+        Route::post('/tasks/{task}/update-location', [CleanerTaskController::class, 'updateLocation'])->name('tasks.update-location');
     });
+
+    
 });
 
 /*

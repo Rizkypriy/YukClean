@@ -4,6 +4,42 @@
 @section('title', 'Lacak Pesanan')
 
 @section('content')
+{{-- Tambahkan ini di bagian head atau sebelum menutup body --}}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/laravel-echo/1.11.0/echo.iife.js"></script>
+<script src="https://js.pusher.com/8.2/pusher.min.js"></script>
+
+{{-- 🔥 TAMBAHKAN: Leaflet CSS dan JS (OpenStreetMap gratis) --}}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+{{-- Style untuk map --}}
+<style>
+    #map {
+        height: 300px;
+        width: 100%;
+        border-radius: 0.75rem;
+        z-index: 1;
+    }
+    .leaflet-container {
+        border-radius: 0.75rem;
+    }
+    .custom-marker {
+        background: #00bda2;
+        border: 3px solid white;
+        border-radius: 50%;
+        width: 40px !important;
+        height: 40px !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    .custom-marker i {
+        color: white;
+        font-size: 20px;
+    }
+</style>
+
 <div class="min-h-screen bg-white pb-24">
     {{-- Header --}}
     <div class="rounded-b-2xl p-5 text-white shadow-lg relative overflow-hidden" style="background: linear-gradient(135deg, #00bda2 0%, #00c85f 100%);">
@@ -50,11 +86,31 @@
                 @if(isset($cleanerTask) && $cleanerTask->status === 'on_the_way')
                 <div class="text-right">
                     <p class="text-sm text-gray-500">Estimasi Kedatangan</p>
-                    <p class="text-lg font-bold text-green-600">15 menit</p>
+                    <p class="text-lg font-bold text-green-600" id="eta">Menghitung...</p>
                 </div>
                 @endif
             </div>
         </div>
+
+        {{-- 🔥 MAP SECTION dengan Leaflet (OpenStreetMap gratis) --}}
+        @if(isset($cleanerTask) && in_array($cleanerTask->status, ['on_the_way', 'in_progress']))
+        <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+            <h2 class="font-semibold text-gray-700 mb-3">📍 Lokasi Petugas Real-time</h2>
+            
+            {{-- Container Map --}}
+            <div id="map" class="w-full h-64 rounded-lg border border-gray-200 mb-3"></div>
+            
+            {{-- Info Lokasi --}}
+            <div class="flex items-center justify-between text-sm bg-gray-50 p-3 rounded-lg">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span class="text-gray-600">Lokasi diperbarui:</span>
+                    <span id="lastUpdate" class="font-medium text-gray-800">-</span>
+                </div>
+                <span id="accuracy" class="text-xs text-gray-500">Real-time</span>
+            </div>
+        </div>
+        @endif
 
         {{-- Tracking Steps --}}
         <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
@@ -285,10 +341,133 @@
     </div>
 </div>
 
-{{-- Auto refresh halaman setiap 30 detik untuk update status --}}
+{{-- 🔥 SCRIPT untuk tracking real-time dengan Leaflet --}}
+@push('scripts')
+<script>
+    // Data order dari Laravel
+    const orderId = {{ $order->id }};
+    const hasCleanerTask = {{ isset($cleanerTask) && in_array($cleanerTask->status, ['on_the_way', 'in_progress']) ? 'true' : 'false' }};
+    
+    // Variabel global untuk map
+    let map;
+    let marker;
+    let lastLat = -6.200000; // Default (Jakarta)
+    let lastLng = 106.816666;
+
+    // Inisialisasi Leaflet Map
+    function initMap() {
+        if (!hasCleanerTask) return; // Hanya inisialisasi jika ada task aktif
+        
+        // Coba dapatkan lokasi awal dari localStorage
+        const savedLat = localStorage.getItem('lastLat_' + orderId);
+        const savedLng = localStorage.getItem('lastLng_' + orderId);
+        
+        if (savedLat && savedLng) {
+            lastLat = parseFloat(savedLat);
+            lastLng = parseFloat(savedLng);
+        }
+
+        // Inisialisasi peta
+        map = L.map('map').setView([lastLat, lastLng], 15);
+
+        // Tambahkan tile layer dari OpenStreetMap (GRATIS!)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Buat custom icon untuk marker
+        const customIcon = L.divIcon({
+            className: 'custom-marker',
+            html: '<i class="fas fa-broom"></i>',
+            iconSize: [40, 40],
+            popupAnchor: [0, -20]
+        });
+
+        // Tambahkan marker
+        marker = L.marker([lastLat, lastLng], { 
+            icon: customIcon,
+            draggable: false
+        }).addTo(map).bindPopup('Posisi petugas saat ini').openPopup();
+
+        // Update info awal
+        document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('id-ID');
+        
+        // Update ETA
+        if (document.getElementById('eta')) {
+            updateETA();
+        }
+    }
+
+    // Update marker dan peta
+    function updateLocation(lat, lng) {
+        if (!map || !marker) return;
+        
+        const newPos = [parseFloat(lat), parseFloat(lng)];
+        
+        // Update marker
+        marker.setLatLng(newPos);
+        
+        // Geser peta dengan animasi halus
+        map.panTo(newPos);
+        
+        // Update info
+        document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('id-ID');
+        
+        // Simpan ke localStorage
+        localStorage.setItem('lastLat_' + orderId, lat);
+        localStorage.setItem('lastLng_' + orderId, lng);
+        
+        // Update popup
+        marker.bindPopup('Posisi petugas diperbarui: ' + new Date().toLocaleTimeString('id-ID')).openPopup();
+    }
+
+    // Update estimasi waktu (simulasi sederhana)
+    function updateETA() {
+        // Dalam implementasi nyata, ini bisa menggunakan Google Distance Matrix API
+        // Tapi untuk sekarang, kita buat simulasi
+        const etaElement = document.getElementById('eta');
+        if (etaElement) {
+            const minutes = Math.floor(Math.random() * 15) + 5;
+            etaElement.textContent = minutes + ' menit';
+        }
+    }
+
+    // Update ETA setiap 30 detik
+    setInterval(updateETA, 30000);
+
+    // Inisialisasi Laravel Echo
+    if (hasCleanerTask) {
+        window.Pusher = Pusher;
+        window.Echo = new Echo({
+            broadcaster: 'pusher',
+            key: '{{ env("PUSHER_APP_KEY") }}',
+            cluster: '{{ env("PUSHER_APP_CLUSTER") }}',
+            forceTLS: true
+        });
+
+        // Dengarkan event real-time
+        Echo.channel(`order.${orderId}`)
+            .listen('OrderLocationUpdated', (data) => {
+                console.log('📍 Lokasi baru:', data);
+                updateLocation(data.latitude, data.longitude);
+                
+                // Update estimasi kedatangan
+                updateETA();
+            });
+    }
+
+    // Inisialisasi map setelah halaman siap
+    document.addEventListener('DOMContentLoaded', function() {
+        initMap();
+    });
+</script>
+
+{{-- Auto refresh halaman setiap 30 detik untuk update status (fallback) --}}
 <script>
     setTimeout(function() {
         window.location.reload();
     }, 30000);
 </script>
+@endpush
 @endsection
