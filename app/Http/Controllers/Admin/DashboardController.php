@@ -99,7 +99,7 @@ class DashboardController extends Controller
 
         // Jika data kosong, gunakan fallback
         if (empty($serviceLabels)) {
-            $serviceLabels = ['Rumah', 'Kantor', 'Kaca', 'Karpet', 'AC'];
+            $serviceLabels = ['Ruangan', 'Kamar', 'Ruang Tamu', 'Toilet', 'Dapur'];
             $serviceData = [45, 32, 28, 22, 18];
         }
 

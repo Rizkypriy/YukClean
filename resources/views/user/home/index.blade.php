@@ -29,7 +29,7 @@
                 </div>
 
                 {{-- Welcome Message --}}
-                <div class="mb-6 text-center md:text-left">
+                <div class="mb-6 text-left md:text-center">
                     <h2 class="text-xl font-semibold">Halo, Selamat Datang 👋</h2>
                     <p class="text-sm opacity-90 mt-1">Pilih layanan kebersihan yang Anda butuhkan</p>
                 </div>
@@ -50,7 +50,7 @@
             <div class="p-5 md:p-8" style="background-color: #e8fdf3;">
                 {{-- Promo Section dengan Background Gradient yang Cantik --}}
                 <div class="space-y-4 promo-container">
-                    @forelse($promos as $promo)
+                    @foreach($promos as $promo)
                     <div class="rounded-2xl p-3 text-white shadow-lg relative overflow-hidden promo-item"
                         style="background: {{ $promo->background_color }};">
                         {{-- Pattern/Texture --}}
@@ -65,33 +65,7 @@
                             <p class="text-xs opacity-90 mt-1">{{ $promo->description }}</p>
                         </div>
                     </div>
-                    @empty
-                    {{-- Tampilkan promo default jika tidak ada di database --}}
-                    <div class="rounded-2xl p-3 text-white shadow-lg relative overflow-hidden promo-item"
-                        style="background: linear-gradient(135deg, #be79ff 0%, #645fff 100%);">
-                        <div class="absolute top-0 right-0 w-28 h-28 bg-white opacity-10 rounded-full -mr-8 -mt-8"></div>
-                        <div class="absolute bottom-0 left-0 w-20 h-20 bg-white opacity-10 rounded-full -ml-6 -mb-6"></div>
-                        <div class="relative">
-                            <div class="flex items-center justify-between">
-                                <p class="font-semibold text-base mt-1">Diskon 20% Pengguna Baru!</p>
-                                <span class="text-2xl">🏷️</span>
-                            </div>
-                            <p class="text-xs opacity-90 mt-1">Untuk pemesanan pertama Anda</p>
-                        </div>
-                    </div>
-                    <div class="rounded-2xl p-3 text-white shadow-lg relative overflow-hidden promo-item"
-                        style="background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);">
-                        <div class="absolute top-0 right-0 w-28 h-28 bg-white opacity-10 rounded-full -mr-8 -mt-8"></div>
-                        <div class="absolute bottom-0 left-0 w-20 h-20 bg-white opacity-10 rounded-full -ml-6 -mb-6"></div>
-                        <div class="relative">
-                            <div class="flex items-center justify-between">
-                                <p class="font-semibold text-base mt-1">Promo Bundling Rumah!</p>
-                                <span class="text-2xl">🎁</span>
-                            </div>
-                            <p class="text-xs opacity-90 mt-1.5">Hemat hingga 30% untuk paket lengkap</p>
-                        </div>
-                    </div>
-                    @endforelse
+                    @endforeach
                 </div>
 
                 {{-- Layanan Kebersihan Section dengan Grid --}}
@@ -234,12 +208,29 @@
         /* Make promo section grid on desktop */
         .promo-container {
             display: grid !important;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+            grid-template-columns: repeat(2, 1fr) !important; /* Ubah dari auto-fit ke 2 kolom fixed */
             gap: 20px !important;
+            align-items: stretch !important;
+        }
+    
+        .promo-item {
+            height: 100% !important;
+            min-height: 100px !important; /* Tinggi minimum sama */
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important; /* Konten di tengah vertikal */
+            padding: 1rem !important; /* Pastikan padding konsisten */
+            margin: 0 !important;
+            box-sizing: border-box !important;
         }
 
-        .promo-item {
-            margin-bottom: 0 !important;
+        /* Pastikan konten dalam promo item juga sama */
+        .promo-item .relative {
+            width: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            flex: 1 !important;
         }
 
         /* Make services grid 4 columns on desktop */
@@ -357,6 +348,16 @@
         /* Hapus padding di mobile */
         .desktop-container > div > div:last-child {
             padding: 1.25rem !important;
+        }
+
+        .min-h-screen {
+            padding-top: 0 !important;
+        }
+        
+        .desktop-container > div > div:first-child {
+            margin-top: 0 !important;
+            border-top-left-radius: 0 !important;
+            border-top-right-radius: 0 !important;
         }
     }
 </style>
