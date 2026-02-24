@@ -31,13 +31,13 @@ class HomeController extends Controller
         if ($promos->isEmpty()) {
             $promos = collect([
                 (object)[
-                    'title' => 'Diskon 20% Pengguna Baru!',
+                    'title' => 'Diskon 20% Pengguna Baru!!!',
                     'description' => 'Untuk pemesanan pertama Anda',
                     'icon' => '🏷️',
                     'background_color' => 'linear-gradient(135deg, #ff8429 0%, #f7349a 100%)'
                 ],
                 (object)[
-                    'title' => 'Promo Bundling Rumah!',
+                    'title' => 'Promo Bundling Rumah!!!',
                     'description' => 'Hemat hingga 30% untuk paket lengkap',
                     'icon' => '🎁',
                     'background_color' => 'linear-gradient(135deg, #be79ff 0%, #645fff 100%)'

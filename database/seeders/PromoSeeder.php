@@ -14,7 +14,7 @@ class PromoSeeder extends Seeder
         $promos = [
             [
                 'code' => 'NEWUSER20',
-                'title' => 'Diskon 20% Pengguna Baru',
+                'title' => 'Diskon 20% Pengguna Baru!!!',
                 'description' => 'Nikmati potongan harga untuk pemesanan pertama Anda',
                 'discount_type' => 'percentage',
                 'discount_value' => 20,
