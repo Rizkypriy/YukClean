@@ -11,7 +11,7 @@ class Order extends Model
     protected $fillable = [
         'order_number',
         'user_id',
-        'cleaner_id', // <-- TAMBAHKAN
+        'cleaner_id',
         'service_id',
         'bundle_id',
         'promo_id',
@@ -28,6 +28,9 @@ class Order extends Model
         'status',
         'notes',
         'cancellation_reason',
+        'rating',
+        'review',
+        'completed_at',
     ];
 
     protected $casts = [

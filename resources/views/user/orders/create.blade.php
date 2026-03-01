@@ -129,6 +129,71 @@
     </form>
 </div>
 
+{{-- Tambahkan style untuk mode desktop --}}
+<style>
+    /* Desktop Styles - Applied when width > 768px */
+    @media (min-width: 768px) {
+        .min-h-screen {
+            padding: 2rem !important;
+            background-color: #e8fdf3 !important;
+            background-image: none !important;
+        }
+
+        .desktop-wrapper {
+            max-width: 1200px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            padding-left: 24px !important;
+            padding-right: 24px !important;
+        }
+
+        /* Card styling untuk desktop */
+        .desktop-wrapper > .bg-white {
+            border-radius: 24px !important;
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1), 0 10px 20px -5px rgba(0, 0, 0, 0.05) !important;
+        }
+
+        /* Header dalam card */
+        .desktop-wrapper > .bg-white > div:first-child {
+            border-radius: 24px 24px 0 0 !important;
+        }
+
+        /* Konten dalam card */
+        .desktop-wrapper > .bg-white > div:last-child {
+            padding: 2rem !important;
+        }
+
+        /* Card hover effect untuk desktop */
+        .bg-white.rounded-2xl.shadow-xl {
+            transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+        }
+
+        .bg-white.rounded-2xl.shadow-xl:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 5px 10px -5px rgba(0, 0, 0, 0.05) !important;
+        }
+    }
+</style>
+
+{{-- Script untuk membungkus konten dalam wrapper desktop --}}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.innerWidth >= 768) {
+            const container = document.querySelector('.min-h-screen');
+            const content = container.innerHTML;
+            
+            // Buat wrapper desktop
+            container.innerHTML = `
+                <div class="desktop-wrapper">
+                    <div class="bg-white md:rounded-2xl md:shadow-xl overflow-hidden">
+                        ${content}
+                    </div>
+                </div>
+            `;
+        }
+    });
+</script>
+
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {

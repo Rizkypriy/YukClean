@@ -326,7 +326,10 @@ class OrderController extends Controller
 
         DB::beginTransaction();
         try {
-            $order->update(['status' => 'completed']);
+            $order->update([
+                'status' => 'completed',
+                'completed_at' => now()
+            ]);
 
             // Update payment jika ada
             $payment = Payment::where('order_id', $order->id)->first();

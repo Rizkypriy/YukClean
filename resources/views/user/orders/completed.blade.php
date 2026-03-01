@@ -3,113 +3,211 @@
 @section('title', 'Pesanan Selesai')
 
 @section('content')
-<div class="min-h-screen bg-white flex flex-col items-center justify-center px-6 pb-24">
-    {{-- Ilustrasi / Icon --}}
-    <div class="w-32 h-32 bg-green-100 rounded-full flex items-center justify-center mb-6">
-        <svg class="w-16 h-16 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-    </div>
-
-    {{-- Pesan Terima Kasih --}}
-    <h1 class="text-3xl font-bold text-gray-800 mb-2 text-center">
-        Terima Kasih! 👋
-    </h1>
-    <h2 class="text-xl font-semibold text-green-600 mb-4 text-center">
-        Pesanan Selesai
-    </h2>
-    
-    <p class="text-gray-600 text-center mb-8 max-w-md">
-        Terima kasih sudah memakai jasa Yuk Clean! 
-        Kami senang membantu rumah Anda tetap bersih dan nyaman.
-    </p>
-
-    {{-- Rating Section --}}
-    {{-- Rating Section --}}
-<div class="w-full max-w-md bg-gray-50 rounded-xl p-6 mb-6">
-    <p class="text-gray-700 text-center mb-3">Bagaimana pengalaman Anda?</p>
-    
-    {{-- Hubungkan Alpine.js secara penuh --}}
-    <div x-data="{ 
-        rating: 0, 
-        hoverRating: 0,
-        comment: '',
-        loading: false,
-        submitRating() {
-            if (this.rating === 0) return alert('Silakan pilih rating');
-            this.loading = true;
-
-            fetch('{{ route("user.orders.rate", $order) }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({
-                    rating: this.rating,
-                    review: this.comment
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    window.location.href = '{{ route("user.orders.index") }}';
-                } else {
-                    alert(data.message);
-                    this.loading = false;
-                }
-            })
-            .catch(e => {
-                alert('Terjadi kesalahan');
-                this.loading = false;
-            });
-        }
-    }" class="mb-4">
-        
-        <div class="flex justify-center gap-2">
-            <template x-for="star in 5" :key="star">
-                <button @mouseenter="hoverRating = star" 
-                        @mouseleave="hoverRating = 0"
-                        @click="rating = star"
-                        class="focus:outline-none transition-transform hover:scale-110">
-                    <svg class="w-10 h-10 transition-colors duration-200" 
-                         :class="(hoverRating ? star <= hoverRating : star <= rating) ? 'text-yellow-400' : 'text-gray-300'"
-                         fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+<div class="min-h-screen py-4 md:py-8" style="background-color: #e8fdf3;">
+    {{-- Container untuk desktop dengan card --}}
+    <div class="desktop-container mx-auto px-4 sm:px-6" style="max-width: 100%;">
+        {{-- Card Utama untuk Desktop --}}
+        <div class="bg-white md:rounded-2xl md:shadow-xl overflow-hidden">
+            
+            {{-- Konten dalam Card --}}
+            <div class="p-6 md:p-10 flex flex-col items-center justify-center" style="background-color: #e8fdf3; min-height: 80vh;">
+                {{-- Ilustrasi / Icon --}}
+                <div class="w-32 h-32 bg-green-100 rounded-full flex items-center justify-center mb-6">
+                    <svg class="w-16 h-16 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                </button>
-            </template>
-        </div>
-        
-        <div x-show="rating > 0" x-transition class="mt-4">
-            <textarea x-model="comment"
-                      rows="3" 
-                      class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-300 mb-3"
-                      placeholder="Tulis ulasan Anda (opsional)"></textarea>
+                </div>
 
-            <button @click="submitRating()"
-                    :disabled="loading"
-                    class="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50">
-                <span x-show="!loading">Kirim Rating</span>
-                <span x-show="loading">⏳ Mengirim...</span>
-            </button>
+                {{-- Pesan Terima Kasih --}}
+                <h1 class="text-3xl font-bold text-gray-800 mb-2 text-center">
+                    Terima Kasih! 👋
+                </h1>
+                <h2 class="text-xl font-semibold text-green-600 mb-4 text-center">
+                    Pesanan Selesai
+                </h2>
+                
+                <p class="text-gray-600 text-center mb-8 max-w-md">
+                    Terima kasih sudah memakai jasa Yuk Clean! 
+                    Kami senang membantu rumah Anda tetap bersih dan nyaman.
+                </p>
+
+                {{-- Rating Section --}}
+                <div class="w-full max-w-md bg-gray-50 rounded-xl p-6 mb-6">
+                    <p class="text-gray-700 text-center mb-3">Bagaimana pengalaman Anda?</p>
+                    
+                    {{-- Hubungkan Alpine.js secara penuh --}}
+                    <div x-data="{ 
+                        rating: 0, 
+                        hoverRating: 0,
+                        comment: '',
+                        loading: false,
+                        submitRating() {
+                            if (this.rating === 0) return alert('Silakan pilih rating');
+                            this.loading = true;
+
+                            fetch('{{ route("user.orders.rate", $order) }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                },
+                                body: JSON.stringify({
+                                    rating: this.rating,
+                                    review: this.comment
+                                })
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success) {
+                                    window.location.href = '{{ route("user.orders.index") }}';
+                                } else {
+                                    alert(data.message);
+                                    this.loading = false;
+                                }
+                            })
+                            .catch(e => {
+                                alert('Terjadi kesalahan');
+                                this.loading = false;
+                            });
+                        }
+                    }" class="mb-4">
+                        
+                        <div class="flex justify-center gap-2">
+                            <template x-for="star in 5" :key="star">
+                                <button @mouseenter="hoverRating = star" 
+                                        @mouseleave="hoverRating = 0"
+                                        @click="rating = star"
+                                        class="focus:outline-none transition-transform hover:scale-110">
+                                    <svg class="w-10 h-10 transition-colors duration-200" 
+                                         :class="(hoverRating ? star <= hoverRating : star <= rating) ? 'text-yellow-400' : 'text-gray-300'"
+                                         fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                                    </svg>
+                                </button>
+                            </template>
+                        </div>
+                        
+                        <div x-show="rating > 0" x-transition class="mt-4">
+                            <textarea x-model="comment"
+                                      rows="3" 
+                                      class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-300 mb-3"
+                                      placeholder="Tulis ulasan Anda (opsional)"></textarea>
+
+                            <button @click="submitRating()"
+                                    :disabled="loading"
+                                    class="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50">
+                                <span x-show="!loading">Kirim Rating</span>
+                                <span x-show="loading">⏳ Mengirim...</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Tombol Aksi --}}
+                <div class="w-full max-w-md space-y-3 mb-20">
+                    <a href="{{ route('user.orders.create', $order->service_id ?? $order->bundle_id) }}" 
+                       class="block w-full bg-green-600 text-white text-center py-4 rounded-xl font-semibold text-lg hover:bg-green-700 transition">
+                        Pesan Lagi
+                    </a>
+                    
+                    <a href="{{ route('user.dashboard') }}" 
+                       class="block w-full border border-green-600 text-green-600 text-center py-4 rounded-xl font-semibold text-lg hover:bg-green-50 transition">
+                        Kembali ke Home
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-    {{-- Tombol Aksi --}}
-    <div class="w-full max-w-md space-y-3">
-        <a href="{{ route('user.orders.create', $order->service_id ?? $order->bundle_id) }}" 
-           class="block w-full bg-green-600 text-white text-center py-4 rounded-xl font-semibold text-lg hover:bg-green-700 transition">
-            Pesan Lagi
-        </a>
-        
-        <a href="{{ route('user.dashboard') }}" 
-           class="block w-full border border-green-600 text-green-600 text-center py-4 rounded-xl font-semibold text-lg hover:bg-green-50 transition">
-            Kembali ke Home
-        </a>
-    </div>
-</div>
+<style>
+    /* Global/Specific Styles */
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        min-height: 32px;
+    }
+
+    .hover\:shadow-md {
+        transition: box-shadow 0.2s ease-in-out;
+    }
+
+    button, a {
+        transition: all 0.2s ease-in-out;
+    }
+
+    button:active, a:active {
+        transform: scale(0.98);
+    }
+
+    /* Service card hover effect */
+    .service-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    }
+
+    .service-card:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 5px 10px -5px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    /* Desktop Styles - Applied when width > 768px */
+    @media (min-width: 768px) {
+        .desktop-container {
+            max-width: 1200px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            padding-left: 24px !important;
+            padding-right: 24px !important;
+        }
+
+        /* Card styling untuk desktop */
+        .desktop-container > div {
+            border-radius: 24px !important;
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1), 0 10px 20px -5px rgba(0, 0, 0, 0.05) !important;
+        }
+    }
+
+    /* Mobile styles remain exactly the same */
+    @media (max-width: 767px) {
+        .desktop-container {
+            max-width: 100% !important;
+            padding: 0 !important;
+        }
+
+        /* Hapus background putih di mobile */
+        .desktop-container > div {
+            background-color: transparent !important;
+            box-shadow: none !important;
+        }
+
+        .desktop-container > div > div:last-child {
+            padding: 2rem 1.5rem 2rem 1.5rem !important; /* Tambah padding top dan bottom */
+        }
+
+        .min-h-screen {
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+        }
+    }
+
+    /* Tambahan padding untuk layar sangat kecil */
+    @media (max-width: 480px) {
+        .desktop-container > div > div:last-child {
+            padding: 1.5rem 1rem 1.5rem 1rem !important;
+        }
+    }
+</style>
 
 @push('scripts')
 {{-- Alpine.js CDN --}}
