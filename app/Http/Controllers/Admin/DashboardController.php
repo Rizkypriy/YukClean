@@ -98,10 +98,10 @@ class DashboardController extends Controller
         }
 
         // Jika data kosong, gunakan fallback
-        if (empty($serviceLabels)) {
-            $serviceLabels = ['Ruangan', 'Kamar', 'Ruang Tamu', 'Toilet', 'Dapur'];
-            $serviceData = [45, 32, 28, 22, 18];
-        }
+        // if (empty($serviceLabels)) {
+        //     $serviceLabels = ['Ruangan', 'Kamar', 'Ruang Tamu', 'Toilet', 'Dapur'];
+        //     $serviceData = [45, 32, 28, 22, 18];
+        // }
 
         // 10 pesanan terbaru
         $recentOrders = Order::with(['user', 'service', 'cleaner'])

@@ -56,18 +56,6 @@ class UserSeeder extends Seeder
             ],
         ];
 
-        // Tambahkan user admin (opsional)
-        $users[] = [
-            'name' => 'Admin Yuk Clean',
-            'email' => 'admin@yukclean.com',
-            'phone' => '+62 811-2222-3333',
-            'address' => 'Jl. Kebersihan No. 1, Jakarta Pusat',
-            'member_level' => 'Platinum',
-            'total_orders' => 0,
-            'role' => 'admin', // <-- ROLE ADMIN
-            'password' => Hash::make('admin123'),
-        ];
-
         foreach ($users as $user) {
             User::create($user);
         }

@@ -17,7 +17,7 @@ use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController; 
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\CleanerController;
-use App\Http\Controllers\Admin\ReportController; // 🔥 TAMBAHKAN
+use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
@@ -216,9 +216,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Reports (di dalam group admin)
         Route::prefix('reports')->name('reports.')->group(function () {
-            Route::get('/weekly', [ReportController::class, 'weekly'])->name('weekly');
-            Route::get('/export/pdf', [ReportController::class, 'exportPdf'])->name('export.pdf');
-            Route::get('/export/excel', [ReportController::class, 'exportExcel'])->name('export.excel');
+            Route::get('/weekly', [AdminReportController::class, 'weekly'])->name('weekly');
+            Route::get('/export/pdf', [AdminReportController::class, 'exportPdf'])->name('export.pdf');
+            Route::get('/export/excel', [AdminReportController::class, 'exportExcel'])->name('export.excel');
         });
     });
 });
