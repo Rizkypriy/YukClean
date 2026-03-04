@@ -71,6 +71,7 @@ Route::prefix('user')->name('user.')->group(function () {
             Route::post('/', [OrderController::class, 'store'])->name('store');
             Route::get('/{order}', [OrderController::class, 'show'])->name('show');
             Route::get('/{order}/track', [OrderController::class, 'track'])->name('track');
+            Route::get('/{order}/cleaner-location', [OrderController::class, 'getCleanerLocation'])->name('cleaner-location');
             Route::post('/{order}/cancel', [OrderController::class, 'cancel'])->name('cancel');
             Route::post('/check-promo', [OrderController::class, 'checkPromo'])->name('check-promo');
             Route::post('/check-availability', [OrderController::class, 'checkAvailability'])->name('check-availability');
@@ -195,7 +196,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         
         // Order Management - ADMIN
         Route::prefix('orders')->name('orders.')->group(function () {
-            Route::get('/', [AdminOrderController::class, 'monitoring'])->name('monitoring'); // 🔥 PERBAIKI
+            Route::get('/', [AdminOrderController::class, 'monitoring'])->name('monitoring');
+            Route::get('/api/status-stats', [AdminOrderController::class, 'getStatusStats'])->name('api.status-stats');
+            Route::get('/api/active-jobs', [AdminOrderController::class, 'getActiveJobsData'])->name('api.active-jobs');
             Route::get('/{order}', [AdminOrderController::class, 'show'])->name('show');
             Route::put('/{order}', [AdminOrderController::class, 'update'])->name('update');
             Route::post('/{order}/assign-cleaner', [AdminOrderController::class, 'assignCleaner'])->name('assign-cleaner');

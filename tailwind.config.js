@@ -2,7 +2,11 @@
 export default {
     content: ["./resources/**/*.blade.php", "./resources/**/*.js"],
     theme: {
-        extend: {},
+        extend: {
+            colors: {
+                'yuk-teal': '#00bda2',
+            },
+        },
     },
     plugins: [],
 };

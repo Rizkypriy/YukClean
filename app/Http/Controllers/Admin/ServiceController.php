@@ -12,7 +12,8 @@ class ServiceController extends Controller
     public function index()
     {
         $services = Service::latest()->paginate(15);
-        return view('admin.services.index', compact('services'));
+        $categories = ['umum', 'spesial'];
+        return view('admin.services.index', compact('services', 'categories'));
     }
 
     public function create()
@@ -26,6 +27,7 @@ class ServiceController extends Controller
         // Validasi data sesuai dengan form
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'category' => 'required|string|in:umum,spesial',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'icon_name' => 'nullable|string|in:ruangan,kamar,ruang tamu,toilet,dapur',
@@ -64,6 +66,7 @@ class ServiceController extends Controller
         // Validasi data
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'category' => 'required|string|in:umum,spesial',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'icon_name' => 'nullable|string|in:ruangan,kamar,ruang tamu,toilet,dapur',

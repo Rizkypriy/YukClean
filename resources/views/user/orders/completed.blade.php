@@ -33,13 +33,19 @@
 
                 {{-- Rating Section --}}
                 <div class="w-full max-w-md bg-gray-50 rounded-xl p-6 mb-6">
-                    <p class="text-gray-700 text-center mb-3">Bagaimana pengalaman Anda?</p>
+                    <p class="text-gray-700 text-center mb-3">
+                        @if($order->rating)
+                            Perbarui rating Anda
+                        @else
+                            Bagaimana pengalaman Anda?
+                        @endif
+                    </p>
                     
                     {{-- Hubungkan Alpine.js secara penuh --}}
                     <div x-data="{ 
-                        rating: 0, 
+                        rating: {{ $order->rating ?? 0 }}, 
                         hoverRating: 0,
-                        comment: '',
+                        comment: `{{ $order->review ?? '' }}`,
                         loading: false,
                         submitRating() {
                             if (this.rating === 0) return alert('Silakan pilih rating');
@@ -96,7 +102,13 @@
                             <button @click="submitRating()"
                                     :disabled="loading"
                                     class="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50">
-                                <span x-show="!loading">Kirim Rating</span>
+                                <span x-show="!loading">
+                                    @if($order->rating)
+                                        Perbarui Rating
+                                    @else
+                                        Kirim Rating
+                                    @endif
+                                </span>
                                 <span x-show="loading">⏳ Mengirim...</span>
                             </button>
                         </div>

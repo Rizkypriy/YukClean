@@ -42,9 +42,8 @@
                         class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
                         required>
                     <option value="">Pilih Kategori</option>
-                    <option value="Residential" {{ old('category', $service->category) == 'Residential' ? 'selected' : '' }}>Residential</option>
-                    <option value="Commercial" {{ old('category', $service->category) == 'Commercial' ? 'selected' : '' }}>Commercial</option>
-                    <option value="Specialized" {{ old('category', $service->category) == 'Specialized' ? 'selected' : '' }}>Specialized</option>
+                    <option value="umum" {{ old('category', $service->category) == 'umum' ? 'selected' : '' }}>Umum</option>
+                    <option value="spesial" {{ old('category', $service->category) == 'spesial' ? 'selected' : '' }}>Spesial</option>
                 </select>
                 @error('category')
                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -82,7 +81,7 @@
             {{-- Durasi Minimal --}}
             <div class="mb-4">
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Durasi Minimal (Jam) <span class="text-red-500">*</span>
+                    Durasi Minimal (Menit) <span class="text-red-500">*</span>
                 </label>
                 <input type="number" 
                        name="duration" 

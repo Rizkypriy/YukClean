@@ -34,6 +34,8 @@
 
     {{-- Form Register --}}
     <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md border border-[#cfcfcf]">
+        <form method="POST" action="{{ route('user.register.submit') }}">
+            @csrf
         
         {{-- Nama Lengkap --}}
         <div class="mb-4">
@@ -68,6 +70,16 @@
             @enderror
         </div>
 
+        {{-- Alamat --}}
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-medium mb-2">Alamat</label>
+            <textarea name="address" rows="2" value="{{ old('address') }}" 
+                class="w-full px-4 py-3 rounded-lg border bg-white {{ $errors->has('address') ? 'border-red-500' : 'border-gray-200' }} focus:outline-none focus:ring-2 focus:ring-[#cfcfcf]"
+                placeholder="Masukkan alamat lengkap Anda" required></textarea>
+            @error('address')
+                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+            @enderror
+        </div>
 
         {{-- Password --}}
         <div class="mb-4">
@@ -95,6 +107,7 @@
             onmouseout="this.style.background='linear-gradient(135deg, #00bda2 0%, #00c85f 100%)'">
             Daftar
         </button>
+        </form>
     </div>
 
         
@@ -102,10 +115,9 @@
         {{-- Link Login --}}
         <p class="text-center mt-4 text-gray-600">
             Sudah punya akun? 
-            <a href="{{ route('user.register') }}" class="text-[#00bda2] font-medium hover:underline">
+            <a href="{{ route('user.login') }}" class="text-[#00bda2] font-medium hover:underline">
                 Login
             </a>
         </p>
-    </form>
 </div>
 @endsection

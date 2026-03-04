@@ -26,6 +26,7 @@ class Order extends Model
         'discount',
         'total',
         'status',
+        'progress',
         'notes',
         'cancellation_reason',
         'rating',

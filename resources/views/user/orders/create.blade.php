@@ -28,6 +28,8 @@
     <form method="POST" action="{{ route('user.orders.store') }}" id="orderForm" class="pb-10">
         @csrf
         <input type="hidden" name="service_id" value="{{ $service->id }}">
+        {{-- TAMBAHKAN INPUT HIDDEN UNTUK MENYIMPAN HARGA SERVICE --}}
+        <input type="hidden" id="servicePrice" value="{{ $service->price }}">
 
         {{-- Alamat Lengkap Card --}}
         <div class="bg-white rounded-2xl shadow-xl p-6 border border-[#cfcfcf] mx-auto w-[90%] md:w-[500px] mb-4" style="min-height: 200px;">
@@ -103,20 +105,59 @@
                 </div>
                 <div>
                     <label class="block text-xs text-gray-500 mb-1 font-medium">Jam Mulai</label>
-                    <input type="time" name="start_time" 
+                    <input type="time" name="start_time" id="start_time"
                         class="w-full px-4 py-3 rounded-xl border-0 bg-[#f3f3f5] {{ $errors->has('start_time') ? 'border-red-500' : '' }} focus:outline-none focus:ring-2 focus:ring-[#cfcfcf]"
                         value="{{ old('start_time') }}" required>
                     @error('start_time')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
-                            {{-- TAMBAHKAN INPUT HIDDEN UNTUK END_TIME --}}
+                    {{-- TAMBAHKAN INPUT HIDDEN UNTUK END_TIME --}}
                     <input type="hidden" name="end_time" id="end_time" value="">
-
                 </div>
             </div>
         </div>
 
-        
+        {{-- TAMBAHKAN PROMO CODE CARD --}}
+        {{-- Promo Code Card --}}
+        <div class="bg-white rounded-2xl shadow-xl p-6 border border-[#cfcfcf] mx-auto w-[90%] md:w-[500px] mb-4 service-card">
+            <h3 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <span>🎫</span> Kode Promo
+            </h3>
+            <div class="flex gap-2">
+                <input type="text" name="promo_code" id="promoCode" 
+                    class="flex-1 px-4 py-3 rounded-xl border-0 bg-[#f3f3f5] focus:outline-none focus:ring-2 focus:ring-[#cfcfcf]"
+                    placeholder="Masukkan kode promo" value="{{ old('promo_code') }}">
+                <button type="button" id="checkPromoBtn" 
+                    class="bg-gray-200 text-gray-700 px-6 py-3 rounded-xl hover:bg-gray-300 transition font-medium">
+                    Cek
+                </button>
+            </div>
+            <div id="promoMessage" class="mt-2 text-sm hidden"></div>
+        </div>
+
+        {{-- TAMBAHKAN RINGKASAN HARGA CARD --}}
+        {{-- Ringkasan Harga Card --}}
+        <div class="bg-white rounded-2xl shadow-xl p-6 border border-[#cfcfcf] mx-auto w-[90%] md:w-[500px] mb-4 service-card">
+            <h3 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <span>💰</span> Ringkasan Harga
+            </h3>
+            <div class="space-y-2">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Subtotal</span>
+                    <span class="font-medium" id="subtotalDisplay">Rp {{ number_format($service->price, 0, ',', '.') }}</span>
+                </div>
+                <div class="flex justify-between text-green-600" id="discountRow" style="display: none;">
+                    <span>Diskon</span>
+                    <span id="discountAmount">-Rp 0</span>
+                </div>
+                <div class="border-t border-gray-200 pt-2 mt-2">
+                    <div class="flex justify-between font-bold text-lg">
+                        <span>Total</span>
+                        <span class="text-green-600" id="totalDisplay">Rp {{ number_format($service->price, 0, ',', '.') }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         {{-- Tombol Submit --}}
         <div class="mx-auto w-[90%] md:w-[500px] mb-10">
@@ -173,6 +214,16 @@
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 5px 10px -5px rgba(0, 0, 0, 0.05) !important;
         }
     }
+
+    /* Service card hover effect */
+    .service-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    }
+
+    .service-card:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 5px 10px -5px rgba(0, 0, 0, 0.05) !important;
+    }
 </style>
 
 {{-- Script untuk membungkus konten dalam wrapper desktop --}}
@@ -197,8 +248,19 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const form = document.getElementById('orderForm');
+        const startTimeInput = document.getElementById('start_time');
         const endTimeInput = document.getElementById('end_time');
+        const form = document.getElementById('orderForm');
+        
+        // TAMBAHKAN VARIABEL UNTUK PROMO
+        const originalPrice = {{ $service->price }};
+        const subtotalDisplay = document.getElementById('subtotalDisplay');
+        const totalDisplay = document.getElementById('totalDisplay');
+        const discountRow = document.getElementById('discountRow');
+        const discountAmount = document.getElementById('discountAmount');
+        const promoCode = document.getElementById('promoCode');
+        const checkPromoBtn = document.getElementById('checkPromoBtn');
+        const promoMessage = document.getElementById('promoMessage');
         
         // Hitung end_time otomatis saat start_time dipilih
         if (startTimeInput && endTimeInput) {
@@ -226,43 +288,81 @@
                 startTimeInput.dispatchEvent(event);
             }
         }
+
+        // TAMBAHKAN FUNGSI FORMAT RUPIAH
+        function formatRupiah(amount) {
+            return 'Rp ' + amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        // TAMBAHKAN FUNGSI UPDATE PRICE
+        function updatePrice(discount = 0) {
+            const total = originalPrice - discount;
+            totalDisplay.textContent = formatRupiah(total);
+            if (discount > 0) {
+                discountRow.style.display = 'flex';
+                discountAmount.textContent = '- ' + formatRupiah(discount);
+            } else {
+                discountRow.style.display = 'none';
+            }
+        }
+
+        // TAMBAHKAN EVENT LISTENER UNTUK CEK PROMO
+        if (checkPromoBtn) {
+            checkPromoBtn.addEventListener('click', function() {
+                const code = promoCode.value.trim();
+                
+                if (!code) {
+                    promoMessage.className = 'mt-2 text-sm text-red-600';
+                    promoMessage.textContent = 'Masukkan kode promo';
+                    promoMessage.classList.remove('hidden');
+                    return;
+                }
+
+                fetch('{{ route("user.orders.check-promo") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        code: code,
+                        subtotal: originalPrice
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.valid) {
+                        promoMessage.className = 'mt-2 text-sm text-green-600';
+                        promoMessage.textContent = 'Kode promo valid!';
+                        updatePrice(data.discount);
+                    } else {
+                        promoMessage.className = 'mt-2 text-sm text-red-600';
+                        promoMessage.textContent = data.message;
+                        updatePrice(0);
+                    }
+                    promoMessage.classList.remove('hidden');
+                    
+                    // Auto hide after 5 seconds
+                    setTimeout(() => {
+                        promoMessage.classList.add('hidden');
+                    }, 5000);
+                })
+                .catch(error => {
+                    promoMessage.className = 'mt-2 text-sm text-red-600';
+                    promoMessage.textContent = 'Terjadi kesalahan';
+                    promoMessage.classList.remove('hidden');
+                });
+            });
+        }
         
-        // Optional: Tambahkan loading state saat submit
+        // Loading state saat submit
         form.addEventListener('submit', function() {
             const submitBtn = this.querySelector('button[type="submit"]');
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<span class="opacity-0">Buat Pesanan</span><div class="absolute inset-0 flex items-center justify-center"><svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>';
         });
 
-        // Optional: Validasi sederhana di client-side
-        function validateForm() {
-            const address = document.querySelector('textarea[name="address"]').value.trim();
-            const customerName = document.querySelector('input[name="customer_name"]').value.trim();
-            const customerPhone = document.querySelector('input[name="customer_phone"]').value.trim();
-            const bookingDate = document.querySelector('input[name="booking_date"]').value;
-            const startTime = document.querySelector('input[name="start_time"]').value;
-
-            if (!address || !customerName || !customerPhone || !bookingDate || !startTime) {
-                alert('Harap isi semua field yang wajib diisi');
-                return false;
-            }
-
-            return true;
-        }
-
-        // Uncomment jika ingin menggunakan validasi client-side
-        /*
-        form.addEventListener('submit', function(e) {
-            if (!validateForm()) {
-                e.preventDefault();
-                const submitBtn = this.querySelector('button[type="submit"]');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = 'Buat Pesanan';
-            }
-        });
-        */
-
-        // Optional: Format nomor HP (hanya angka)
+        // Format nomor HP (hanya angka)
         const phoneInput = document.querySelector('input[name="customer_phone"]');
         if (phoneInput) {
             phoneInput.addEventListener('input', function(e) {

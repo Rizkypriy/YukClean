@@ -5,12 +5,13 @@ namespace App\Http\Controllers\Cleaner;
 use App\Http\Controllers\Controller;
 use App\Models\Cleaner;
 use App\Models\CleanerTask;
+use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Models\OrderTracking; // <-- TAMBAHKAN INI
-use App\Events\OrderLocationUpdated; // <-- TAMBAHKAN INI (kalau pakai event)
+use App\Models\OrderTracking;
+use App\Events\OrderLocationUpdated;
 
 class TaskController extends Controller
 {
@@ -102,8 +103,28 @@ class TaskController extends Controller
     $cleaner = Auth::guard('cleaner')->user();
     $currentTask = $cleaner->currentTask;
     
-    // HAPUS redirect, tetap kirim variabel meskipun null
-    return view('cleaner.tasks.current', compact('currentTask'));
+    // geocode alamat pelanggan untuk peta cleaner
+    $customerCoords = null;
+    if ($currentTask && $currentTask->address) {
+        try {
+            $resp = \Illuminate\Support\Facades\Http::get('https://nominatim.openstreetmap.org/search', [
+                'q' => $currentTask->address,
+                'format' => 'json',
+                'limit' => 1,
+            ]);
+            if ($resp->ok() && is_array($resp->json()) && count($resp->json()) > 0) {
+                $data = $resp->json()[0];
+                $customerCoords = [
+                    'lat' => floatval($data['lat']),
+                    'lng' => floatval($data['lon']),
+                ];
+            }
+        } catch (\Exception $e) {
+            Log::warning('Geocode cleaner current error: ' . $e->getMessage());
+        }
+    }
+
+    return view('cleaner.tasks.current', compact('currentTask', 'customerCoords'));
 }
 
     public function updateStatus(Request $request, $id)
@@ -143,6 +164,11 @@ class TaskController extends Controller
                 // Reset status cleaner ke available
                 $cleaner = Auth::guard('cleaner')->user();
                 $cleaner->update(['status' => 'available']);
+
+                // 🔔 Broadcast status change so user can be redirected
+                if (class_exists('App\Events\OrderStatusUpdated')) {
+                    broadcast(new \App\Events\OrderStatusUpdated($task->order_id, 'completed'));
+                }
             }
 
             $task->save();
@@ -168,24 +194,52 @@ class TaskController extends Controller
 
         DB::beginTransaction();
         try {
+            // 1. UPDATE PROGRESS DI CLEANER_TASKS
             $task->update([
                 'progress' => $request->progress,
                 'status' => 'in_progress'
             ]);
             
-            if ($task->order) {
-                $task->order->update(['progress' => $request->progress]);
+            // 2. UPDATE PROGRESS DI ORDERS (Langsung via foreign key)
+            if ($task->order_id) {
+                $orderUpdates = [
+                    'progress' => $request->progress,
+                    'status' => 'on_progress'
+                ];
+
+                // jika progress sudah 100%, tandai selesai
+                if ($request->progress == 100) {
+                    $orderUpdates['status'] = 'completed';
+                    $orderUpdates['completed_at'] = now();
+                }
+
+                Order::where('id', $task->order_id)->update($orderUpdates);
+
+                // jika selesai, broadcast event status
+                if ($request->progress == 100 && class_exists('App\Events\OrderStatusUpdated')) {
+                    broadcast(new \App\Events\OrderStatusUpdated($task->order_id, 'completed'));
+                }
             }
 
             DB::commit();
+            
+            Log::info('Progress updated', [
+                'task_id' => $task->id,
+                'order_id' => $task->order_id,
+                'progress' => $request->progress
+            ]);
+            
             return response()->json([
                 'success' => true,
                 'message' => 'Progress diperbarui',
-                'progress' => $task->progress
+                'progress' => $request->progress
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Update progress error: ' . $e->getMessage());
+            Log::error('Update progress error: ' . $e->getMessage(), [
+                'task_id' => $task->id,
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json(['success' => false, 'message' => 'Gagal update progress'], 500);
         }
     }
@@ -235,7 +289,13 @@ public function updateLocation(Request $request, CleanerTask $task)
 
     DB::beginTransaction();
     try {
-        // CEK DULU APAKAH MODEL OrderTracking ADA
+        // 1. UPDATE LOKASI DI CLEANER TASK (PENTING!)
+        $task->update([
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+        ]);
+
+        // 2. CEK DULU APAKAH MODEL OrderTracking ADA
         if (!class_exists('App\Models\OrderTracking')) {
             // Buat tracking tanpa model dulu (simpan ke log)
             Log::info('Location update for task ' . $task->id, [
@@ -259,15 +319,19 @@ public function updateLocation(Request $request, CleanerTask $task)
             );
         } else {
             // Simpan ke database tracking (pakai model)
-            $tracking = OrderTracking::create([
-                'order_id'   => $task->order_id,
-                'cleaner_id' => Auth::guard('cleaner')->id(),
-                'latitude'   => $request->latitude,
-                'longitude'  => $request->longitude,
-            ]);
+            $tracking = OrderTracking::updateOrCreate(
+                [
+                    'order_id'   => $task->order_id,
+                    'cleaner_id' => Auth::guard('cleaner')->id(),
+                ],
+                [
+                    'latitude'   => $request->latitude,
+                    'longitude'  => $request->longitude,
+                ]
+            );
         }
 
-        // BROADCAST - cek dulu apakah class event ada
+        // 3. BROADCAST - cek dulu apakah class event ada
         if (class_exists('App\Events\OrderLocationUpdated')) {
             try {
                 broadcast(new OrderLocationUpdated(
@@ -289,10 +353,12 @@ public function updateLocation(Request $request, CleanerTask $task)
         ]);
 
     } catch (\Exception $e) {
-    DB::rollBack();
-    Log::error('Update Lokasi Error: ' . $e->getMessage());
-    return response()->json(['error' => 'Gagal mengirim lokasi'], 500);
-
+        DB::rollBack();
+        Log::error('Update Lokasi Error: ' . $e->getMessage());
+        return response()->json([
+            'success' => false, 
+            'message' => 'Gagal mengirim lokasi: ' . $e->getMessage()
+        ], 500);
     }
 }
 }

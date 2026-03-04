@@ -2,6 +2,19 @@
 @extends('cleaner.layouts.app')
 @section('title', 'Status Pekerjaan')
 
+@push('styles')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    .leaflet-container { height: 100%; width: 100%; }
+    /* ukuran map agar konsisten dengan halaman user */
+    #customerMap {
+        height: 300px;
+        width: 100%;
+        border-radius: 0.75rem;
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="min-h-screen bg-white pb-24">
 
@@ -61,6 +74,10 @@
                 <div class="flex items-start gap-3">
                     <span class="text-gray-700">{{ $currentTask->address }}</span>
                 </div>
+
+                {{-- Peta lokasi pelanggan untuk cleaner --}}
+                <div id="customerMap" class="w-full mb-4"></div>
+
                 <div class="flex items-start gap-3">
                     <span class="text-gray-700">
                         {{ \Carbon\Carbon::parse($currentTask->task_date)->format('d M Y') }},
@@ -202,11 +219,58 @@
 
 {{-- SCRIPT --}}
 @push('scripts')
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
     const taskId = {{ $currentTask->id ?? 0 }};
-    const currentStatus = '{{ $currentTask->status ?? '' }}';
+    const currentStatus = '{{ $currentTask?->status ?? '' }}';
+
+    // inisialisasi peta pelanggan apabila ada alamat
+    if ('{{ !empty($currentTask) }}') {
+        initCustomerMap();
+    }
+    async function initCustomerMap() {
+        const coords = {!! json_encode($customerCoords) ?? 'null' !!};
+        const address = {!! json_encode($currentTask?->address) ?? 'null' !!};
+        
+        if (!address) return; // exit jika tidak ada alamat
+        
+        if (coords && coords.lat && coords.lng) {
+            // gunakan koordinat yang sudah di-geocode server
+            const map = L.map('customerMap').setView([coords.lat, coords.lng], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+            L.marker([coords.lat, coords.lng]).addTo(map).bindPopup('Lokasi pelanggan').openPopup();
+        } else {
+            // kalau server tidak bisa, coba geocoding client sebagai fallback
+            if (!address) return;
+            try {
+                const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`;
+                const resp = await fetch(url);
+                const result = await resp.json();
+                if (result && result.length) {
+                    const lat = parseFloat(result[0].lat);
+                    const lng = parseFloat(result[0].lon);
+                    const map = L.map('customerMap').setView([lat, lng], 15);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; OpenStreetMap contributors',
+                        maxZoom: 19
+                    }).addTo(map);
+                    L.marker([lat, lng]).addTo(map).bindPopup('Lokasi pelanggan').openPopup();
+                } else {
+                    document.getElementById('customerMap').innerHTML = '<p class="text-center text-sm text-gray-500">Alamat tidak dapat ditemukan</p>';
+                }
+            } catch (e) {
+                console.error('Geocoding error:', e);
+                document.getElementById('customerMap').innerHTML = '<p class="text-center text-sm text-red-500">Gagal memuat peta</p>';
+            }
+        }
+    }
+
     
     // ===========================================
     // 🔥 TRACKING REAL-TIME
@@ -398,6 +462,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         startTracking();
                     } else if (status === 'completed') {
                         stopTracking();
+                        // redirect ke dashboard setelah selesai
+                        setTimeout(() => {
+                            window.location.href = '{{ route("cleaner.dashboard") }}';
+                        }, 1000);
+                        return;
                     }
                     location.reload();
                 } else alert(d.message || 'Gagal update');
@@ -417,16 +486,44 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.querySelectorAll('.btn-update-progress').forEach(btn => {
         btn.onclick = () => {
-            fetch(`/cleaner/tasks/${btn.dataset.taskId}/progress`, {
+            const taskId = btn.dataset.taskId;
+            const progressValue = parseInt(slider.value, 10);
+            
+            console.log(`📤 Sending progress update:`, { taskId, progress: progressValue });
+            
+            fetch(`/cleaner/tasks/${taskId}/progress`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': csrfToken
                 },
-                body: JSON.stringify({ progress: slider.value })
+                body: JSON.stringify({ progress: progressValue })
             })
-            .then(r => r.json())
-            .then(d => alert(d.message));
+            .then(async r => {
+                console.log(`📥 Response status: ${r.status}`);
+                
+                // Check if response is JSON
+                const contentType = r.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    // Server returned non-JSON (likely error page)
+                    const text = await r.text();
+                    console.error('❌ Non-JSON response:', text.substring(0, 200));
+                    throw new Error(`Server error (${r.status}): Server returned HTML instead of JSON. Check server logs.`);
+                }
+                
+                return r.json();
+            })
+            .then(d => {
+                console.log(`✅ Progress update response:`, d);
+                alert(d.message);
+                if (d.success) {
+                    setTimeout(() => location.reload(), 1000);
+                }
+            })
+            .catch(err => {
+                console.error('❌ Progress update failed:', err);
+                alert('Gagal update progress: ' + err.message);
+            });
         };
     });
 });

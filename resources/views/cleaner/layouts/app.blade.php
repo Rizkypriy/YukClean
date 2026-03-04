@@ -9,6 +9,7 @@
     
     {{-- VITE untuk CSS (ganti CDN Tailwind) --}}
     @vite(['resources/css/app.css'])
+    @stack('styles')
     
     {{-- Font Awesome tetap via CDN --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -78,6 +79,7 @@
             }, 5000);
         </script>
     @endif
+    @stack('scripts')
 
     {{-- Notifikasi Error --}}
     @if(session('error'))

@@ -4,56 +4,73 @@
 @section('title', 'Login Petugas')
 
 @section('content')
-<div class="min-h-screen bg-white flex flex-col justify-center p-6">
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-green-600">Masuk ke<br>Yuk Clean Petugas</h1>
-        <p class="text-gray-600 mt-2">Selamat bekerja hari ini!</p>
+<div class="min-h-screen flex flex-col justify-center p-6 max-w-md mx-auto" style="background: linear-gradient(135deg, #f0fdf5 50%, #d3fcf2 100%);">
+    {{-- Header --}}
+    <div class="mb-8 text-center">
+        <img src="{{ asset('img/logo.png') }}" alt="Yuk Clean Logo" 
+         class="w-24 h-24 mx-auto mb-4">
+        <h3 class="text-xl font-bold text-black mb-2.5">Masuk ke Yuk Clean Petugas</h3>
+        <p class="text-black">Selamat bekerja hari ini! Silakan masuk</p>
     </div>
 
-    <form method="POST" action="{{ route('cleaner.login') }}">
-        @csrf
-        
-        <div class="mb-4">
-            <label class="block text-gray-700 text-sm font-medium mb-2">Email</label>
-            <input type="email" name="email" value="{{ old('email') }}" 
-                class="w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-green-300 {{ $errors->has('email') ? 'border-red-500' : 'border-gray-200' }}"
-                placeholder="petugas@email.com" required>
-            @error('email')
-                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-            @enderror
-        </div>
+    {{-- Form Login --}}
+    <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md border border-[#cfcfcf]">
+        <form method="POST" action="{{ route('cleaner.login') }}">
+            @csrf
+            
+            {{-- Email --}}
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-medium mb-2">Email</label>
+                <input type="email" name="email" value="{{ old('email') }}" 
+                    class="w-full px-4 py-3 rounded-lg border bg-[#f3f3f5] {{ $errors->has('email') ? 'border-red-500' : 'border-gray-200' }} focus:outline-none focus:ring-2 focus:ring-[#cfcfcf]"
+                    placeholder="petugas@email.com" required autofocus>
+                @error('email')
+                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                @enderror
+            </div>
 
-        <div class="mb-6">
-            <label class="block text-gray-700 text-sm font-medium mb-2">Password</label>
-            <input type="password" name="password" 
-                class="w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-green-300 {{ $errors->has('password') ? 'border-red-500' : 'border-gray-200' }}"
-                placeholder="********" required>
-            @error('password')
-                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-            @enderror
-        </div>
+            {{-- Password --}}
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-medium mb-2">Password</label>
+                <input type="password" name="password" 
+                    class="w-full px-4 py-3 rounded-lg border bg-[#f3f3f5] {{ $errors->has('password') ? 'border-red-500' : 'border-gray-200' }} focus:outline-none focus:ring-2 focus:ring-[#cfcfcf]"
+                    placeholder="Masukkan password" required>
+                @error('password')
+                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                @enderror
+            </div>
 
-        <div class="flex items-center mb-6">
-            <input type="checkbox" name="remember" id="remember" class="mr-2">
-            <label for="remember" class="text-sm text-gray-600">Ingat saya</label>
-        </div>
+            {{-- Remember Me --}}
+            <div class="flex items-center mb-6">
+                <input type="checkbox" name="remember" id="remember" 
+                    class="w-4 h-4 text-[#00bda2] border-gray-300 rounded focus:ring-[#00bda2]">
+                <label for="remember" class="ml-2 text-sm text-gray-600">Ingat saya</label>
+            </div>
 
-        <button type="submit" 
-            class="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition">
-            Login
-        </button>
+            {{-- Button Login --}}
+            <button type="submit" 
+                class="w-full text-white py-3 rounded-lg font-medium transition-all duration-150"
+                style="background: linear-gradient(135deg, #00bda2 0%, #00c85f 100%);"
+                onmouseover="this.style.background='linear-gradient(135deg, #00a58c 0%, #00b04a 100%)'"
+                onmouseout="this.style.background='linear-gradient(135deg, #00bda2 0%, #00c85f 100%)'">
+                Login
+            </button>
+        </form>
+    </div>
 
-      <p class="text-center mt-4 text-gray-600">
-    Belum punya akun? 
-    <a href="{{ route('cleaner.register') }}" class="text-green-600 font-medium hover:underline">Daftar</a>
-</p>
+    {{-- Link Register --}}
+    <p class="text-center mt-4 text-gray-600">
+        Belum punya akun? 
+        <a href="{{ route('cleaner.register') }}" class="text-[#00bda2] font-medium hover:underline">
+            Daftar
+        </a>
+    </p>
 
-{{-- Link kembali ke landing page --}}
-<p class="text-center mt-2">
-    <a href="{{ route('login.landing') }}" class="text-sm text-gray-500 hover:underline">
-        ← Kembali ke pilihan role
-    </a>
-</p>
-    </form>
+    {{-- Link kembali ke landing page --}}
+    <p class="text-center mt-2">
+        <a href="{{ route('login.landing') }}" class="text-sm text-gray-500 hover:underline">
+            ← Kembali ke pilihan role
+        </a>
+    </p>
 </div>
 @endsection

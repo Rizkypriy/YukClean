@@ -127,4 +127,65 @@ class OrderController extends Controller
         ));
     }
 
+    /**
+     * Get active jobs data for real-time monitoring (API endpoint)
+     */
+    public function getActiveJobsData()
+    {
+        $activeJobs = Order::with(['user', 'cleaner', 'service'])
+            ->whereIn('status', ['on_progress', 'in_progress'])
+            ->latest()
+            ->take(5)
+            ->get();
+
+        // Transform data untuk response JSON
+        $jobs = $activeJobs->map(function($job) {
+            return [
+                'id' => $job->id,
+                'order_number' => $job->order_number,
+                'customer_name' => $job->user->name ?? $job->customer_name,
+                'cleaner_name' => $job->cleaner->name ?? 'Belum ditugaskan',
+                'service_name' => $job->service->name ?? 'Layanan',
+                'address' => $job->address,
+                'start_time' => substr($job->start_time, 0, 5),
+                'end_time' => substr($job->end_time, 0, 5),
+                'progress' => $job->progress ?? 0,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $jobs
+        ]);
+    }
+
+    /**
+     * Get status stats for real-time monitoring (API endpoint)
+     */
+    public function getStatusStats()
+    {
+        $statusStats = [
+            'waiting' => Order::where('status', 'pending')->count(),
+            'in_progress' => Order::whereIn('status', ['on_progress', 'in_progress'])->count(),
+            'completed' => Order::where('status', 'completed')->count(),
+            'cancelled' => Order::where('status', 'cancelled')->count(),
+        ];
+
+        $totalOrders = array_sum($statusStats);
+
+        $percentages = [
+            'waiting' => $totalOrders > 0 ? round(($statusStats['waiting'] / $totalOrders) * 100, 1) : 0,
+            'in_progress' => $totalOrders > 0 ? round(($statusStats['in_progress'] / $totalOrders) * 100, 1) : 0,
+            'completed' => $totalOrders > 0 ? round(($statusStats['completed'] / $totalOrders) * 100, 1) : 0,
+            'cancelled' => $totalOrders > 0 ? round(($statusStats['cancelled'] / $totalOrders) * 100, 1) : 0,
+        ];
+
+        return response()->json([
+            'success' => true,
+            'statusStats' => $statusStats,
+            'totalOrders' => $totalOrders,
+            'percentages' => $percentages
+        ]);
+    }
+
 }

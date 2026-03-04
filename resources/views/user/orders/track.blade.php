@@ -456,23 +456,57 @@
     const orderId = {{ $order->id }};
     const hasCleanerTask = {{ isset($cleanerTask) && in_array($cleanerTask->status, ['on_the_way', 'in_progress']) ? 'true' : 'false' }};
     
+    // coordinates pelanggan (jika tersedia dari server)
+    const customerCoords = {!! json_encode($customerCoords) !!};
+
     // Variabel global untuk map
     let map;
     let marker;
     let lastLat = -6.200000; // Default (Jakarta)
     let lastLng = 106.816666;
+    const orderCleanerLocationUrl = '{{ route("user.orders.cleaner-location", $order) }}';
+
+    // Fetch lokasi cleaner terbaru dari server
+    async function fetchCleanerLocation() {
+        try {
+            const response = await fetch(orderCleanerLocationUrl);
+            const data = await response.json();
+            
+            if (data.success && data.latitude && data.longitude) {
+                lastLat = parseFloat(data.latitude);
+                lastLng = parseFloat(data.longitude);
+                console.log('📍 Lokasi cleaner fetched:', { lastLat, lastLng });
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('❌ Error fetching cleaner location:', error);
+            return false;
+        }
+    }
 
     // Inisialisasi Leaflet Map
-    function initMap() {
+    async function initMap() {
         if (!hasCleanerTask) return; // Hanya inisialisasi jika ada task aktif
         
-        // Coba dapatkan lokasi awal dari localStorage
-        const savedLat = localStorage.getItem('lastLat_' + orderId);
-        const savedLng = localStorage.getItem('lastLng_' + orderId);
-        
-        if (savedLat && savedLng) {
-            lastLat = parseFloat(savedLat);
-            lastLng = parseFloat(savedLng);
+        // jika server menyediakan koordinat pelanggan, gunakan sebagai pusat
+        if (customerCoords && customerCoords.lat && customerCoords.lng) {
+            lastLat = customerCoords.lat;
+            lastLng = customerCoords.lng;
+        }
+
+        // First, try to fetch latest location dari server
+        try {
+            await fetchCleanerLocation();
+        } catch (error) {
+            console.warn('Failed to fetch location, using saved location');
+            const savedLat = localStorage.getItem('lastLat_' + orderId);
+            const savedLng = localStorage.getItem('lastLng_' + orderId);
+            
+            if (savedLat && savedLng) {
+                lastLat = parseFloat(savedLat);
+                lastLng = parseFloat(savedLng);
+            }
         }
 
         // Inisialisasi peta
@@ -544,30 +578,38 @@
     // Update ETA setiap 30 detik
     setInterval(updateETA, 30000);
 
-    // Inisialisasi Laravel Echo
-    if (hasCleanerTask) {
-        window.Pusher = Pusher;
-        window.Echo = new Echo({
-            broadcaster: 'pusher',
-            key: '{{ env("PUSHER_APP_KEY") }}',
-            cluster: '{{ env("PUSHER_APP_CLUSTER") }}',
-            forceTLS: true
+    // Inisialisasi Laravel Echo (hanya sekali) untuk mendengarkan status order
+    window.Pusher = Pusher;
+    window.Echo = new Echo({
+        broadcaster: 'pusher',
+        key: '{{ env("PUSHER_APP_KEY") }}',
+        cluster: '{{ env("PUSHER_APP_CLUSTER") }}',
+        forceTLS: true
+    });
+
+    // Dengarkan perubahan status pesanan, redirect ketika selesai
+    Echo.channel(`order.${orderId}`)
+        .listen('OrderStatusUpdated', (data) => {
+            console.log('📣 Status order changed:', data);
+            if (data.status === 'completed') {
+                window.location.href = '{{ route("user.orders.completed", $order) }}';
+            }
         });
 
-        // Dengarkan event real-time
+    // Jika ada task aktif, juga dengarkan lokasi bergerak
+    if (hasCleanerTask) {
         Echo.channel(`order.${orderId}`)
             .listen('OrderLocationUpdated', (data) => {
                 console.log('📍 Lokasi baru:', data);
                 updateLocation(data.latitude, data.longitude);
-                
                 // Update estimasi kedatangan
                 updateETA();
             });
     }
 
     // Inisialisasi map setelah halaman siap
-    document.addEventListener('DOMContentLoaded', function() {
-        initMap();
+    document.addEventListener('DOMContentLoaded', async function() {
+        await initMap();
     });
 </script>
 

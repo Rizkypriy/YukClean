@@ -307,8 +307,29 @@ class OrderController extends Controller
         
         // Load relasi lainnya
         $order->load(['service', 'bundle', 'promo']);
-        
-        return view('user.orders.track', compact('order', 'cleanerTask'));
+
+        // Geocode alamat pelanggan satu kali di server untuk menghindari CORS gagal
+        $customerCoords = null;
+        if ($order->address) {
+            try {
+                $resp = \Illuminate\Support\Facades\Http::get('https://nominatim.openstreetmap.org/search', [
+                    'q' => $order->address,
+                    'format' => 'json',
+                    'limit' => 1,
+                ]);
+                if ($resp->ok() && is_array($resp->json()) && count($resp->json()) > 0) {
+                    $data = $resp->json()[0];
+                    $customerCoords = [
+                        'lat' => floatval($data['lat']),
+                        'lng' => floatval($data['lon']),
+                    ];
+                }
+            } catch (\Exception $e) {
+                \Log::warning('Geocode failed: ' . $e->getMessage());
+            }
+        }
+
+        return view('user.orders.track', compact('order', 'cleanerTask', 'customerCoords'));
     }
 
     /**
@@ -455,21 +476,30 @@ class OrderController extends Controller
 
     DB::beginTransaction();
     try {
-        // 2. SIMPAN REVIEW
-        $review = new Review();
-        $review->user_id    = Auth::id();
-        $review->order_id   = $order->id;
-        $review->service_id = $order->service_id;
-        $review->cleaner_id = $cleanerId; // Pastikan ini terisi
-        $review->rating     = $request->rating;
-        $review->comment    = $request->review;
+        // 2. CARI ATAU BUAT REVIEW (support update)
+        $review = Review::where('order_id', $order->id)
+                        ->where('user_id', Auth::id())
+                        ->first();
+        
+        if (!$review) {
+            // Jika belum ada rating, buat baru
+            $review = new Review();
+            $review->user_id    = Auth::id();
+            $review->order_id   = $order->id;
+            $review->service_id = $order->service_id;
+            $review->cleaner_id = $cleanerId;
+        }
+        
+        // Update rating dan comment (baik create maupun update)
+        $review->rating  = $request->rating;
+        $review->comment = $request->review;
         $review->save();
 
         // 3. UPDATE ORDER
         $order->update([
             'rating' => $request->rating,
             'review' => $request->review,
-            'cleaner_id' => $cleanerId // Sekalian isi kolom cleaner_id di tabel orders jika kosong
+            'cleaner_id' => $cleanerId
         ]);
 
         // 4. UPDATE STATISTIK CLEANER
@@ -486,7 +516,7 @@ class OrderController extends Controller
 
             $cleaner->update([
                 'rating' => round($avgRating, 1),
-                'total_reviews' => $review->where('cleaner_id', $cleanerId)->count() // Jika ada kolom ini
+                'total_reviews' => Review::where('cleaner_id', $cleanerId)->count()
             ]);
         }
 
@@ -524,6 +554,36 @@ class OrderController extends Controller
         ]);
 
         return back()->with('success', 'Catatan berhasil diperbarui');
+    }
+
+    /**
+     * Get cleaner's current location (API endpoint untuk tracking real-time)
+     */
+    public function getCleanerLocation(Order $order)
+    {
+        if ($order->user_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // Ambil cleaner task untuk order ini
+        $cleanerTask = CleanerTask::where('order_id', $order->id)
+            ->with('cleaner')
+            ->first();
+
+        if (!$cleanerTask || !$cleanerTask->latitude || !$cleanerTask->longitude) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lokasi cleaner belum tersedia'
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'latitude' => floatval($cleanerTask->latitude),
+            'longitude' => floatval($cleanerTask->longitude),
+            'cleaner_name' => $cleanerTask->cleaner->name ?? 'Petugas',
+            'updated_at' => $cleanerTask->updated_at
+        ]);
     }
 
     

@@ -59,12 +59,18 @@
                 <tr class="hover:bg-teal-50 transition-colors">
                     <td class="p-4 font-bold text-gray-900">{{ $service->name }}</td>
                     <td class="p-4">
-                        <span class="px-3 py-1 bg-sky-100 text-sky-700 rounded-full text-xs font-bold border border-sky-200">
-                            {{ $service->category ?? 'Umum' }}
-                        </span>
+                        @if($service->category === 'spesial')
+                            <span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold border border-yellow-200">
+                                {{ $service->category ?? 'Umum' }}
+                            </span>
+                        @else
+                            <span class="px-3 py-1 bg-sky-100 text-sky-700 rounded-full text-xs font-bold border border-sky-200">
+                                {{ $service->category ?? 'Umum' }}
+                            </span>
+                        @endif
                     </td>
                     <td class="p-4 font-bold text-teal-700">{{ $service->formatted_price }}</td>
-                    <td class="p-4 text-gray-600">{{ $service->duration }} jam</td>
+                    <td class="p-4 text-gray-600">{{ $service->duration }} menit</td>
                     <td class="p-4">
                         @if($service->is_active)
                             <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold border border-green-200">Aktif</span>
