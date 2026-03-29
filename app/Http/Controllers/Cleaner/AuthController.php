@@ -49,6 +49,7 @@ class AuthController extends Controller
         if (Auth::guard('cleaner')->attempt($credentials, $request->filled('remember'))) {
             // Regenerasi session
             $request->session()->regenerate();
+            $request->session()->regenerateToken();
             
             // Debug log sukses
             Log::info('LOGIN SUCCESS for: ' . $request->email);

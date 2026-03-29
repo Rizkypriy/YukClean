@@ -48,6 +48,8 @@ Route::prefix('cleaner')->name('cleaner.')->group(function () {
             Route::get('/current', [TaskController::class, 'current'])->name('current');      // Tugas aktif
             Route::post('/{task}/accept', [TaskController::class, 'accept'])->name('accept'); // Ambil tugas
             Route::post('/{task}/status', [TaskController::class, 'updateStatus'])->name('update-status'); // Update status
+            Route::post('/{task}/update-location', [TaskController::class, 'updateLocation'])->name('update-location'); // Update lokasi
+            Route::post('/{task}/progress', [TaskController::class, 'updateProgress'])->name('update-progress'); // Update progress
             Route::get('/history', [TaskController::class, 'history'])->name('history');      // Riwayat tugas
         });
 

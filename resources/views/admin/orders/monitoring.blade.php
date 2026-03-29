@@ -245,6 +245,17 @@
     // Inisialisasi ikon Lucide
     lucide.createIcons();
 
+    // initialize Echo (push notifications)
+    if (window.Pusher && window.Echo == null) {
+        window.Pusher = Pusher;
+        window.Echo = new Echo({
+            broadcaster: 'pusher',
+            key: '{{ env("PUSHER_APP_KEY") }}',
+            cluster: '{{ env("PUSHER_APP_CLUSTER") }}',
+            forceTLS: true
+        });
+    }
+
     // 🔥 REAL-TIME MONITORING
     const statusApiUrl = '{{ route("admin.orders.api.status-stats") }}';
     const jobsApiUrl = '{{ route("admin.orders.api.active-jobs") }}';
@@ -366,6 +377,23 @@
         }, 5000);
     }
 
+    // Setup Echo listener for broadcasts
+    function initEchoListeners() {
+        if (typeof Echo === 'undefined') {
+            console.warn('Laravel Echo not available');
+            return;
+        }
+
+        // listen on global orders channel
+        Echo.channel('orders')
+            .listen('OrderStatusUpdated', (data) => {
+                console.log('🔔 OrderStatusUpdated received on admin page', data);
+                // refresh counts and active jobs when anything changes
+                updateStatusStats();
+                updateActiveJobs();
+            });
+    }
+
     // Stop polling
     function stopPolling() {
         if (pollInterval) {
@@ -374,7 +402,10 @@
     }
 
     // Mulai polling saat DOM ready
-    document.addEventListener('DOMContentLoaded', startPolling);
+    document.addEventListener('DOMContentLoaded', () => {
+        startPolling();
+        initEchoListeners();
+    });
 
     // Stop polling saat user meninggalkan halaman
     window.addEventListener('beforeunload', stopPolling);

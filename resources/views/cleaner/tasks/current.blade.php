@@ -223,9 +223,17 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    const csrfToken = csrfMeta ? csrfMeta.content : '';
     const taskId = {{ $currentTask->id ?? 0 }};
     const currentStatus = '{{ $currentTask?->status ?? '' }}';
+
+    if (!csrfToken) {
+        console.error('CSRF token not found!');
+        return;
+    }
+
+    console.log('CSRF Token loaded:', csrfToken.substring(0, 10) + '...');
 
     // inisialisasi peta pelanggan apabila ada alamat
     if ('{{ !empty($currentTask) }}') {

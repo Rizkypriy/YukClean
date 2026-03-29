@@ -226,6 +226,11 @@ class PaymentController extends Controller
             $order->update(['status' => 'on_progress']);
             Log::info('Order status updated to on_progress');
 
+            // notify admin via broadcast
+            if (class_exists('\App\Events\OrderStatusUpdated')) {
+                broadcast(new \App\Events\OrderStatusUpdated($order->id, 'on_progress'));
+            }
+
             // ===== BUAT TUGAS UNTUK CLEANER =====
             // Tentukan service type dan name
             $serviceType = 'regular';

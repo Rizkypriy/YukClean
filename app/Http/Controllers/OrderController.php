@@ -167,6 +167,11 @@ class OrderController extends Controller
                 'cleaner_id' => null
             ]);
 
+            // broadcast new order so admin monitoring updates immediately
+            if (class_exists('\App\Events\OrderStatusUpdated')) {
+                broadcast(new \App\Events\OrderStatusUpdated($order->id, 'pending'));
+            }
+
             // 7. Buat Cleaner Task otomatis
             CleanerTask::create([
                 'order_id'      => $order->id,

@@ -151,7 +151,6 @@ Route::prefix('cleaner')->name('cleaner.')->group(function () {
             Route::get('/statistics', [CleanerProfileController::class, 'statistics'])->name('statistics');
         });
 
-        Route::post('/tasks/{task}/update-location', [CleanerTaskController::class, 'updateLocation'])->name('tasks.update-location');
     });
 
     
